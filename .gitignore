@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# trap CLI run artifacts (regeneratable; may contain agent stdout/stderr
+# from private API responses — never commit)
+.trap/
+
+# Python venvs anywhere in the tree
+**/.venv/
+
+# Local environment overrides
+.env
+.env.local
