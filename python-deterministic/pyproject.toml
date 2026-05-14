@@ -1,0 +1,8 @@
+[project]
+name = "python-deterministic-scheduler"
+version = "0.1.0"
+description = "Zero-LLM regex+zoneinfo baseline for the cross_timezone scheduler task"
+requires-python = ">=3.14"
+dependencies = [
+    "trap @ git+https://github.com/AntiNoise-ai/trap.git@feat/tp-submit",
+]

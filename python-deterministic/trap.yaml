@@ -1,0 +1,8 @@
+tasks:
+  cross-timezone-scheduler:
+    description: Pure-Python regex + zoneinfo baseline (no LLM)
+    cmd: uv run python solution.py
+    traptask: ../../trapstreet-tasks/tasks/scheduler/cross_timezone
+    timeout: 30
+    file_outputs:
+      - usage.json
