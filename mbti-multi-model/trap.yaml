@@ -1,0 +1,8 @@
+tasks:
+  mbti-profile:
+    description: MBTI questionnaire — routes to MODEL env var (Anthropic or OpenRouter)
+    cmd: uv run python solution.py
+    traptask: ../../trapstreet-tasks/tasks/personality/mbti_profile
+    timeout: 600   # heavy reasoning models can take >60s
+    file_outputs:
+      - usage.json

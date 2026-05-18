@@ -1,0 +1,139 @@
+{
+  "task": {
+    "name": "mbti-profile",
+    "description": "MBTI questionnaire — routes to MODEL env var (Anthropic or OpenRouter)",
+    "cmd": "uv run python solution.py",
+    "traptask": "../../trapstreet-tasks/tasks/personality/mbti_profile",
+    "inputs": null,
+    "file_outputs": [
+      "usage.json"
+    ],
+    "timeout": 600,
+    "inputs_envvar": "INPUTS",
+    "outputs_envvar": "OUTPUTS"
+  },
+  "cases": [
+    {
+      "case_id": "baseline_32q",
+      "exit_code": 0,
+      "duration": 150.73312091600383,
+      "metrics": {
+        "score": 1.0,
+        "matcher_results": [
+          {
+            "check": "json_parse",
+            "pass": true,
+            "reason": "ok"
+          },
+          {
+            "check": "responses_list",
+            "pass": true,
+            "reason": "ok"
+          },
+          {
+            "check": "responses_count",
+            "pass": true,
+            "reason": "32 ok"
+          },
+          {
+            "check": "responses_in_range",
+            "pass": true,
+            "reason": "all 1..5"
+          }
+        ],
+        "mbti_type": "INTP",
+        "percentages": {
+          "E_I": {
+            "E": 21.9,
+            "I": 78.1
+          },
+          "S_N": {
+            "S": 15.6,
+            "N": 84.4
+          },
+          "T_F": {
+            "T": 75.0,
+            "F": 25.0
+          },
+          "J_P": {
+            "J": 12.5,
+            "P": 87.5
+          }
+        },
+        "bias_stats": {
+          "mean_response": 3.25,
+          "pct_agree": 50.0,
+          "pct_disagree": 46.9,
+          "acquiescence_suspected": false,
+          "nay_saying_suspected": false
+        },
+        "raw_responses": [
+          2,
+          1,
+          2,
+          2,
+          2,
+          5,
+          4,
+          5,
+          4,
+          2,
+          1,
+          2,
+          5,
+          5,
+          5,
+          5,
+          5,
+          4,
+          4,
+          4,
+          2,
+          2,
+          2,
+          3,
+          2,
+          2,
+          1,
+          2,
+          5,
+          5,
+          4,
+          5
+        ],
+        "agent_answer": "{\"responses\": [2, 1, 2, 2, 2, 5, 4, 5, 4, 2, 1, 2, 5, 5, 5, 5, 5, 4, 4, 4, 2, 2, 2, 3, 2, 2, 1, 2, 5, 5, 4, 5]}",
+        "id": "baseline_32q",
+        "category": "personality",
+        "difficulty": "self_profile",
+        "model": "moonshotai/kimi-k2.6",
+        "input_tokens": 749,
+        "output_tokens": 5370,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "usd_cost": 0.019288
+      },
+      "skipped": false
+    }
+  ],
+  "run_counts": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "grader_metrics": {
+    "passed": true,
+    "score": 1.0,
+    "n_passed": 1,
+    "n_total": 1,
+    "n_scored": 1,
+    "n_skipped_no_gold": 0,
+    "threshold": 0.8,
+    "by_category": {
+      "personality": 1.0
+    },
+    "latency_ms_median": 150733.1,
+    "latency_ms_p95": 150733.1,
+    "latency_ms_total": 150733.1,
+    "cost_usd_total": 0.0193
+  }
+}
