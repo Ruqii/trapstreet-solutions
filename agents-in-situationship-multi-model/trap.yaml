@@ -1,0 +1,8 @@
+tasks:
+  agents-in-situationship:
+    description: 20-scenario dating quiz — routes to MODEL env var (Anthropic or OpenRouter)
+    cmd: uv run python solution.py
+    traptask: ../../trapstreet-tasks/tasks/agents-in-situationship
+    timeout: 600
+    file_outputs:
+      - usage.json
