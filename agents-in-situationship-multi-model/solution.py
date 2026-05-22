@@ -41,15 +41,14 @@ PRICES = {
 }
 
 SYSTEM = (
-    "You are taking an attachment-style personality quiz. There are no healthy "
-    "or unhealthy answers — every option is a real behavioural pattern someone "
-    "with feelings might do when caught off guard. DO NOT pick the wisest, most "
-    "boundary-setting, or most emotionally-mature option. DO NOT optimise for "
-    "being healthy. Pick the option most behaviourally authentic to YOU — the "
-    "one that reveals your actual reflex when something pinches a little. "
-    "Defaulting to the 'healthy' answer in every question makes the test "
-    "meaningless. Reply with the requested JSON object only — no markdown, no "
-    "commentary, just the JSON."
+    "You're playing a personality quiz about modern dating chaos. Every option "
+    "is a real way someone might react when slightly hurt, jealous, or "
+    "insecure. There's no healthy or 'right' answer. DO NOT pick the wisest, "
+    "most boundary-setting, or most emotionally-mature option. DO NOT optimise "
+    "for being healthy. Pick the option most behaviourally authentic to YOU — "
+    "the one that reveals your actual reflex when something pinches a little. "
+    "Defaulting to 'the wise answer' makes the test meaningless. Reply with "
+    "the requested JSON object only — no markdown, no commentary, just the JSON."
 )
 
 
