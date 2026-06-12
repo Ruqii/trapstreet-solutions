@@ -1,0 +1,11 @@
+tasks:
+  test:
+    description: MinerU parser → Claude reasoning
+    cmd: uv run python solution.py
+    traptask: ../../trapstreet-tasks/tasks/pdf_reader
+    timeout: 1200            # first case runs MinerU OCR (~18min CPU) if cache cold;
+                            # markdown is cached in /tmp/trapstreet-mineru-cache after.
+    metadata:
+      # The LLM driving the run; match the MODEL env the solution uses (default below).
+      # Switch model via MODEL in ../trapstreet-cli/.env. Renders in the leaderboard ENGINE column.
+      engine: claude-sonnet-4-6
