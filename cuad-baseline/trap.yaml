@@ -6,3 +6,6 @@ tasks:
     traptask:
       local: ../../trapstreet-tasks/tasks/cuad
     timeout: 120
+    # Named leaderboard identity. Required as a string by the server on submit
+    # (a null/absent solution is rejected with "solution must be a string").
+    solution: cuad-baseline
