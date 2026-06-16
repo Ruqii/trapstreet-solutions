@@ -9,3 +9,9 @@ tasks:
     # Named leaderboard identity. Required as a string by the server on submit
     # (a null/absent solution is rejected with "solution must be a string").
     solution: cuad-baseline
+    # Shown in the leaderboard's "Solution metadata" panel. Cost/tokens stay null
+    # because there is no model call — this is a deterministic baseline.
+    metadata:
+      engine: deterministic-baseline
+      model: none
+      note: constant "NO CLAUSE FOUND", no model call
