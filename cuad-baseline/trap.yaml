@@ -2,6 +2,7 @@ tasks:
   # Local task name == trapstreet task_id ("cuad") so `tp submit cuad` Just Works.
   cuad:
     description: Baseline — always answers "NO CLAUSE FOUND" (zero-cost wiring check)
-    cmd: uv run python solution.py
-    traptask: ../../trapstreet-tasks/tasks/cuad
+    cmd: python3 solution.py
+    traptask:
+      local: ../../trapstreet-tasks/tasks/cuad
     timeout: 120

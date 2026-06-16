@@ -89,15 +89,22 @@ contract and extract a clause span, or correctly say the clause is absent.
 |---|---|---|
 | [`cuad-baseline/`](./cuad-baseline/) | Always answers `NO CLAUSE FOUND` — a $0 wiring check | none (no API key) |
 
+The baseline is stdlib-only (no model, no deps), so it runs with the global `tp`
+directly — no `uv sync` needed:
+
 ```bash
 cd cuad-baseline
-uv sync                       # installs the tp CLI, writes uv.lock
-uv run tp run                 # 32 cases; expect ~0.375 (passes 12/12 absent, fails 20/20 present)
-uv run tp submit cuad         # post to the leaderboard
+tp run                        # 32 cases; verified ~0.375 (passes 12/12 absent, fails 20/20 present)
+tp submit cuad                # post to the leaderboard
 ```
 
-The expected ~0.375 split (`precision_absent = 1.0`, `recall_present = 0.0`)
-confirms the harness + judge are wired correctly before testing a real model.
+The ~0.375 split (`precision_absent = 1.0`, `recall_present = 0.0`) confirms the
+harness + judge are wired correctly before testing a real model.
+
+> **Note on `traptask`:** the current `tp` (`trapstreet-cli`) expects `traptask`
+> as a `TaskSource` object (`{ local: <path> }`), not a bare string. The older
+> PDF solutions in this repo still use the string form and will need the same
+> update when run against the newer CLI.
 
 ## Build your own solution
 
