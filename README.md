@@ -79,6 +79,26 @@ Switching the `MODEL` env var to `claude-sonnet-4-6` cuts cost ~5× but
 requires a higher input-tokens-per-minute rate limit than the default
 (30k TPM caps a 68k-token PDF call).
 
+## CUAD — contract clause extraction (separate task family)
+
+A different task from the PDF set above:
+[`trapstreet.run/tasks/cuad`](https://trapstreet.run/tasks/cuad) — read a
+contract and extract a clause span, or correctly say the clause is absent.
+
+| Folder | Approach | Setup |
+|---|---|---|
+| [`cuad-baseline/`](./cuad-baseline/) | Always answers `NO CLAUSE FOUND` — a $0 wiring check | none (no API key) |
+
+```bash
+cd cuad-baseline
+uv sync                       # installs the tp CLI, writes uv.lock
+uv run tp run                 # 32 cases; expect ~0.375 (passes 12/12 absent, fails 20/20 present)
+uv run tp submit cuad         # post to the leaderboard
+```
+
+The expected ~0.375 split (`precision_absent = 1.0`, `recall_present = 0.0`)
+confirms the harness + judge are wired correctly before testing a real model.
+
 ## Build your own solution
 
 The interface is small. A solution is anything that:
