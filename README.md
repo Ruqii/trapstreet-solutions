@@ -92,15 +92,17 @@ contract and extract a clause span, or correctly say the clause is absent.
 
 ### Switching engines (`cuad-multi-model`)
 
-The engine is the `MODEL` env var — switch it right in the terminal, no code edits:
+The engine is the `MODEL` env var — switch it right in the terminal, no code edits.
+`tp` is installed globally, so just run `tp run` (the solution's `cmd:
+uv run python solution.py` pulls its `anthropic`/`openai` deps via uv automatically
+on first run — no `uv run tp` prefix, no manual `uv sync` needed):
 
 ```bash
 cd cuad-multi-model
-uv sync                                      # one-time: installs anthropic + openai
-MODEL=claude-haiku-4-5    uv run tp run      # cheap default
-MODEL=claude-sonnet-4-6   uv run tp run
-MODEL=claude-opus-4-8     uv run tp run
-MODEL=openai/gpt-5.5      uv run tp run      # OpenRouter (needs OPENROUTER_API_KEY)
+MODEL=claude-haiku-4-5    tp run      # cheap default
+MODEL=claude-sonnet-4-6   tp run
+MODEL=claude-opus-4-8     tp run
+MODEL=openai/gpt-5.5      tp run      # OpenRouter (needs OPENROUTER_API_KEY)
 ```
 
 `claude-*` routes through the Anthropic SDK; everything else through OpenRouter.
