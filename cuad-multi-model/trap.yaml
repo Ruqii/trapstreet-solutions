@@ -8,9 +8,10 @@ tasks:
     timeout: 600              # contracts run up to ~45k tokens; allow for retries
     file_outputs:
       - usage.json            # model + token counts + cost estimate per case
-    # Leaderboard identity. To land each engine as its OWN row, change this per
-    # model before submitting, e.g. solution: cuad-sonnet-4-6 / cuad-opus-4-8.
-    solution: cuad-multi-model
+    # Leaderboard identity = the engine that produced the score. Keep this in
+    # sync with MODEL: set it to the model you run before submitting, e.g.
+    # claude-opus-4-8 / claude-sonnet-4-6 / openai-gpt-5.5.
+    solution: claude-opus-4-8
     # Public repo of this solver — required by the server on submit for public
     # tasks. Declaring it here makes runs submittable even when the working tree
     # is dirty (tp only auto-detects repo+commit from git when the tree is clean).
