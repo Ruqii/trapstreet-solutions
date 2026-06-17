@@ -11,3 +11,8 @@ tasks:
     # Leaderboard identity. To land each engine as its OWN row, change this per
     # model before submitting, e.g. solution: cuad-sonnet-4-6 / cuad-opus-4-8.
     solution: cuad-multi-model
+    # Public repo of this solver — required by the server on submit for public
+    # tasks. Declaring it here makes runs submittable even when the working tree
+    # is dirty (tp only auto-detects repo+commit from git when the tree is clean).
+    metadata:
+      repo: https://github.com/Ruqii/trapstreet-solutions
