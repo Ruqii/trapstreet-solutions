@@ -1,0 +1,13 @@
+tasks:
+  # Local task name == trapstreet task_id ("cuad") so `tp submit` needs no task arg.
+  cuad:
+    description: Multi-model CUAD solver — routes to the MODEL env var (Anthropic / OpenRouter)
+    cmd: uv run python solution.py
+    traptask:
+      local: ../../trapstreet-tasks/tasks/cuad
+    timeout: 600              # contracts run up to ~45k tokens; allow for retries
+    file_outputs:
+      - usage.json            # model + token counts + cost estimate per case
+    # Leaderboard identity. To land each engine as its OWN row, change this per
+    # model before submitting, e.g. solution: cuad-sonnet-4-6 / cuad-opus-4-8.
+    solution: cuad-multi-model

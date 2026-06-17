@@ -88,6 +88,26 @@ contract and extract a clause span, or correctly say the clause is absent.
 | Folder | Approach | Setup |
 |---|---|---|
 | [`cuad-baseline/`](./cuad-baseline/) | Always answers `NO CLAUSE FOUND` — a $0 wiring check | none (no API key) |
+| [`cuad-multi-model/`](./cuad-multi-model/) | Real solver — routes to any model via the `MODEL` env var | `ANTHROPIC_API_KEY` (+ `OPENROUTER_API_KEY` for non-Claude) |
+
+### Switching engines (`cuad-multi-model`)
+
+The engine is the `MODEL` env var — switch it right in the terminal, no code edits:
+
+```bash
+cd cuad-multi-model
+uv sync                                      # one-time: installs anthropic + openai
+MODEL=claude-haiku-4-5    uv run tp run      # cheap default
+MODEL=claude-sonnet-4-6   uv run tp run
+MODEL=claude-opus-4-8     uv run tp run
+MODEL=openai/gpt-5.5      uv run tp run      # OpenRouter (needs OPENROUTER_API_KEY)
+```
+
+`claude-*` routes through the Anthropic SDK; everything else through OpenRouter.
+With no `MODEL` set it falls back to `DEFAULT_MODEL` (`claude-haiku-4-5`). Each run
+writes `usage.json` (model + tokens + cost). To land each engine as its **own**
+leaderboard row, set `solution:` in `trap.yaml` to a per-model name (e.g.
+`cuad-sonnet-4-6`) before `tp submit`.
 
 The baseline is stdlib-only (no model, no deps), so it runs with the global `tp`
 directly — no `uv sync` needed:
