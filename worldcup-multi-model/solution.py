@@ -116,13 +116,41 @@ def estimate_cost_usd(usage: dict, model: str) -> float:
     )
 
 
+CACHE_DIR = Path(__file__).parent / "predictions"
+
+
+def _cache_path(case_id: str, model: str) -> Path:
+    return CACHE_DIR / f"{case_id}__{model.replace('/', '_')}.json"
+
+
 def main() -> int:
     inputs = json.loads(os.environ["INPUTS"])
     outputs = json.loads(os.environ.get("OUTPUTS", "{}"))
-    question = Path(inputs["question.txt"]).read_text()
+    qpath = Path(inputs["question.txt"])
+    case_id = qpath.parent.name                      # inputs/<case_id>/question.txt
+    cache = _cache_path(case_id, MODEL)
 
-    is_anthropic = MODEL.startswith("claude-")
-    answer, usage = (call_anthropic if is_anthropic else call_openrouter)(question)
+    # Route B — freeze the pre-match prediction. First run calls the model and
+    # caches the answer; later runs REPLAY the cached prediction (no new model
+    # call), so the prediction that scores after the match is exactly the one made
+    # before kickoff. Set REFRESH=1 (or delete the cache file) to re-capture.
+    if cache.exists() and os.environ.get("REFRESH") != "1":
+        cached = json.loads(cache.read_text())
+        answer, usage = cached["prediction"], cached.get("usage", {})
+    else:
+        question = qpath.read_text()
+        is_anthropic = MODEL.startswith("claude-")
+        answer, usage = (call_anthropic if is_anthropic else call_openrouter)(question)
+        CACHE_DIR.mkdir(exist_ok=True)
+        cache.write_text(json.dumps({
+            "case_id": case_id,
+            "model": MODEL,
+            "prediction": answer,
+            "usage": usage,
+            "captured_at": __import__("datetime").datetime.now(
+                __import__("datetime").timezone.utc).isoformat(),
+        }, indent=2) + "\n")
+
     print(answer)
 
     if "usage.json" in outputs:

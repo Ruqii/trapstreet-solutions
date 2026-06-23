@@ -44,9 +44,38 @@ You just can't get a **score** until the match is played. Full flow per match:
 Models are closed-book (no tools, training cutoff ~Jan 2026), so running them after
 the whistle is still a genuine blind prediction — they can't know a June 2026
 result. That makes "grade first, then run+submit" the simplest path to a scored
-leaderboard. (If you want the *literal* pre-kickoff prediction to be the one that
-counts, keep the step-1 output and score it with the task's `judge.py` after step 2,
-instead of re-running.)
+leaderboard.
+
+## Route B — freeze the pre-kickoff prediction (for social + "predicted live")
+
+`solution.py` caches each prediction to `predictions/<case_id>__<model>.json` on
+first run, and **replays** it on later runs. So the prediction that scores after
+the match is *exactly* the one made before kickoff — no second model call.
+
+```bash
+# 1. BEFORE kickoff — capture each model's blind prediction (it gets cached)
+ANTHROPIC_API_KEY=...  MODEL=claude-opus-4-8     tp run worldcup-pan-cro
+ANTHROPIC_API_KEY=...  MODEL=claude-sonnet-4-6   tp run worldcup-pan-cro
+OPENROUTER_API_KEY=... MODEL=openai/gpt-5.5      tp run worldcup-pan-cro
+#    -> predictions/wc26_20260623_PAN_CRO__claude-opus-4-8.json  (frozen)
+
+# 2. Post to social — render the frozen predictions
+python3 summary.py PAN_CRO
+#    ⚽ wc26_20260623_PAN_CRO — 3 models predict (blind, no odds)
+#       claude-opus-4-8   home 18% · draw 26% · away 56%
+#       ...
+
+# 3. AFTER full time — fill the result, then re-run (REPLAYS the cached prediction)
+cd ../../trapstreet-tasks/tasks/worldcup_pan_cro
+ODDS_API_KEY=... python3 snapshot.py && python3 grade.py
+cd -
+MODEL=claude-opus-4-8 tp run worldcup-pan-cro    # replays cache -> now SCORES
+tp submit                                        # set trap.yaml `solution:` first
+```
+
+Re-capture a prediction with `REFRESH=1 tp run ...` or by deleting its cache file.
+Commit `predictions/` if you want the frozen predictions on public record (the
+credibility hook for "predicted before kickoff").
 
 ## Models
 
