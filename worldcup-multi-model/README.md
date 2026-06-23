@@ -1,5 +1,19 @@
 # worldcup-multi-model
 
+> **Before you submit — checklist (avoids "ran it, can't submit"):**
+> 1. **The task must be registered on the server first.** Create it at
+>    [trapstreet.run/tasks/new](https://trapstreet.run/tasks/new) by pasting the
+>    task's GitHub URL (e.g. `…/trapstreet-tasks/tree/main/tasks/worldcup_pan_cro`).
+>    Only registered tasks accept `tp submit`; an unregistered one 404s.
+> 2. **Don't submit before the match.** A pre-match run is ungraded → submitting
+>    posts a 0% entry. `tp submit` only after `grade.py` has filled the result.
+> 3. **Engine label must match the model you ran.** Use `./predict.sh <task> <model>`
+>    (it syncs `trap.yaml`'s `solution:` to the model) instead of bare `tp run`,
+>    or the leaderboard mislabels the engine.
+> 4. `tp auth status` shows a valid token; `metadata.repo` is declared (it is);
+>    push the solution commit before submit.
+
+
 A blind, multi-model predictor for the World Cup match tasks
 ([trapstreet-tasks `worldcup_*`](https://github.com/trapstreet/trapstreet-tasks/tree/main/tasks)).
 One `solution.py` serves every match; pick the engine with the `MODEL` env var

@@ -19,8 +19,26 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
+
+
+def extract_json(text: str) -> str:
+    """Pull the bare JSON object out of a model reply.
+
+    Models sometimes wrap the answer in ```json ... ``` fences or add a sentence.
+    The task's judge does a strict json.loads, so a fenced/prefixed reply would
+    score 0 even when the prediction is fine. Strip to the first {...} object.
+    """
+    t = (text or "").strip()
+    m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", t, re.S)
+    if m:
+        return m.group(1).strip()
+    m = re.search(r"\{.*\}", t, re.S)
+    if m:
+        return m.group(0).strip()
+    return t
 
 DEFAULT_MODEL = "claude-opus-4-8"
 MODEL = os.environ.get("MODEL", DEFAULT_MODEL)
@@ -141,6 +159,7 @@ def main() -> int:
         question = qpath.read_text()
         is_anthropic = MODEL.startswith("claude-")
         answer, usage = (call_anthropic if is_anthropic else call_openrouter)(question)
+        answer = extract_json(answer)            # strip fences/prose so judge can parse
         CACHE_DIR.mkdir(exist_ok=True)
         cache.write_text(json.dumps({
             "case_id": case_id,
