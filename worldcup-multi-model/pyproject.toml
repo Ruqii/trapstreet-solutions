@@ -1,0 +1,9 @@
+[project]
+name = "worldcup-multi-model-solution"
+version = "0.1.0"
+description = "Routes the World Cup blind match-prediction tasks to any Claude model or OpenRouter model via the MODEL env var"
+requires-python = ">=3.14"
+dependencies = [
+    "anthropic>=0.40.0",
+    "openai>=1.50.0",
+]

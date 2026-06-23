@@ -1,0 +1,86 @@
+tasks:
+  # Local task name == trapstreet task_id (hyphens, as on trapstreet.run/tasks/...).
+  # One self-contained solution.py serves every match; list each match's task here.
+  worldcup-pan-cro:
+    description: Multi-model World Cup predictor (blind) — routes to MODEL (Anthropic / OpenRouter)
+    cmd: uv run python solution.py
+    traptask:
+      local: ../../trapstreet-tasks/tasks/worldcup_pan_cro
+    timeout: 120
+    file_outputs:
+      - usage.json
+    solution: claude-opus-4-8        # leaderboard identity — keep in sync with MODEL
+    metadata:
+      repo: https://github.com/Ruqii/trapstreet-solutions
+
+  worldcup-sui-can:
+    description: Multi-model World Cup predictor (blind)
+    cmd: uv run python solution.py
+    traptask:
+      local: ../../trapstreet-tasks/tasks/worldcup_sui_can
+    timeout: 120
+    file_outputs:
+      - usage.json
+    solution: claude-opus-4-8
+    metadata:
+      repo: https://github.com/Ruqii/trapstreet-solutions
+
+  worldcup-bih-qat:
+    description: Multi-model World Cup predictor (blind)
+    cmd: uv run python solution.py
+    traptask:
+      local: ../../trapstreet-tasks/tasks/worldcup_bih_qat
+    timeout: 120
+    file_outputs:
+      - usage.json
+    solution: claude-opus-4-8
+    metadata:
+      repo: https://github.com/Ruqii/trapstreet-solutions
+
+  worldcup-sco-bra:
+    description: Multi-model World Cup predictor (blind)
+    cmd: uv run python solution.py
+    traptask:
+      local: ../../trapstreet-tasks/tasks/worldcup_sco_bra
+    timeout: 120
+    file_outputs:
+      - usage.json
+    solution: claude-opus-4-8
+    metadata:
+      repo: https://github.com/Ruqii/trapstreet-solutions
+
+  worldcup-mar-hai:
+    description: Multi-model World Cup predictor (blind)
+    cmd: uv run python solution.py
+    traptask:
+      local: ../../trapstreet-tasks/tasks/worldcup_mar_hai
+    timeout: 120
+    file_outputs:
+      - usage.json
+    solution: claude-opus-4-8
+    metadata:
+      repo: https://github.com/Ruqii/trapstreet-solutions
+
+  worldcup-cze-mex:
+    description: Multi-model World Cup predictor (blind)
+    cmd: uv run python solution.py
+    traptask:
+      local: ../../trapstreet-tasks/tasks/worldcup_cze_mex
+    timeout: 120
+    file_outputs:
+      - usage.json
+    solution: claude-opus-4-8
+    metadata:
+      repo: https://github.com/Ruqii/trapstreet-solutions
+
+  worldcup-rsa-kor:
+    description: Multi-model World Cup predictor (blind)
+    cmd: uv run python solution.py
+    traptask:
+      local: ../../trapstreet-tasks/tasks/worldcup_rsa_kor
+    timeout: 120
+    file_outputs:
+      - usage.json
+    solution: claude-opus-4-8
+    metadata:
+      repo: https://github.com/Ruqii/trapstreet-solutions
