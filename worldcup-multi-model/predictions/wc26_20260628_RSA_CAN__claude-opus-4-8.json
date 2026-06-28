@@ -1,0 +1,12 @@
+{
+  "case_id": "wc26_20260628_RSA_CAN",
+  "model": "claude-opus-4-8",
+  "prediction": "{\"home\": 0.32, \"draw\": 0.28, \"away\": 0.40}",
+  "usage": {
+    "input_tokens": 288,
+    "output_tokens": 28,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0
+  },
+  "captured_at": "2026-06-28T10:45:24.333723+00:00"
+}
