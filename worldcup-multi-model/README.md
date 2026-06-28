@@ -28,7 +28,7 @@ in `trap.yaml` are `../../trapstreet-tasks/tasks/worldcup_*`).
 ANTHROPIC_API_KEY=...  MODEL=claude-opus-4-8     tp run worldcup-pan-cro
 ANTHROPIC_API_KEY=...  MODEL=claude-sonnet-4-6   tp run worldcup-pan-cro
 OPENROUTER_API_KEY=... MODEL=openai/gpt-5.5      tp run worldcup-pan-cro
-OPENROUTER_API_KEY=... MODEL=google/gemini-3-pro tp run worldcup-pan-cro
+OPENROUTER_API_KEY=... MODEL=google/gemini-3.1-pro-preview tp run worldcup-pan-cro
 ```
 
 The model's stdout is its prediction, e.g. `{"home":0.18,"draw":0.26,"away":0.56}`.
@@ -96,6 +96,6 @@ credibility hook for "predicted before kickoff").
 | `MODEL` | Provider | Key |
 |---|---|---|
 | `claude-opus-4-8`, `claude-sonnet-4-6`, `claude-haiku-4-5` | Anthropic | `ANTHROPIC_API_KEY` |
-| `openai/gpt-5.5`, `google/gemini-3-pro`, `x-ai/grok-4.3`, `deepseek/deepseek-v4-pro`, `meta-llama/llama-4-maverick` | OpenRouter | `OPENROUTER_API_KEY` |
+| `openai/gpt-5.5`, `google/gemini-3.1-pro-preview`, `x-ai/grok-4.3`, `deepseek/deepseek-v4-pro`, `meta-llama/llama-4-maverick` | OpenRouter | `OPENROUTER_API_KEY` |
 
 Token usage + cost per case are written to `usage.json` and shown on the leaderboard.

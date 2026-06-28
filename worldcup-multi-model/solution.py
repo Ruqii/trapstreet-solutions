@@ -50,7 +50,7 @@ PRICES = {
     "claude-haiku-4-5":            {"in":  0.80, "out":  4.00},
     "openai/gpt-5.5":              {"in":  5.00, "out": 30.00},
     "x-ai/grok-4.3":               {"in":  1.25, "out":  2.50},
-    "google/gemini-3-pro":         {"in":  1.25, "out": 10.00},
+    "google/gemini-3.1-pro-preview":         {"in":  1.25, "out": 10.00},
     "meta-llama/llama-4-maverick": {"in":  0.15, "out":  0.60},
     "deepseek/deepseek-v4-pro":    {"in":  0.435, "out": 0.870},
 }
