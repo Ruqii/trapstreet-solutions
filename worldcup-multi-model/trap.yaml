@@ -84,3 +84,15 @@ tasks:
     solution: claude-opus-4-8
     metadata:
       repo: https://github.com/Ruqii/trapstreet-solutions
+
+  worldcup-rsa-can:                  # Round of 32 — South Africa vs Canada (Jun 28)
+    description: Multi-model World Cup predictor (blind)
+    cmd: uv run python solution.py
+    traptask:
+      local: ../../trapstreet-tasks/tasks/worldcup_rsa_can
+    timeout: 120
+    file_outputs:
+      - usage.json
+    solution: claude-opus-4-8
+    metadata:
+      repo: https://github.com/Ruqii/trapstreet-solutions
