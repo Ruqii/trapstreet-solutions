@@ -9,7 +9,7 @@ Switch the engine purely from the terminal — no code edits:
   MODEL=claude-opus-4-8     tp run worldcup-pan-cro     (Anthropic; ANTHROPIC_API_KEY)
   MODEL=claude-sonnet-4-6   tp run worldcup-pan-cro     (Anthropic)
   MODEL=openai/gpt-5.5      tp run worldcup-pan-cro     (OpenRouter; OPENROUTER_API_KEY)
-  MODEL=google/gemini-3-pro tp run worldcup-pan-cro     (OpenRouter)
+  MODEL=sakana/fugu-ultra      tp run worldcup-pan-cro     (OpenRouter)
 
 The model is closed-book (no tools, no web). question.txt is self-contained, so it
 is sent as a single user message. Output is the model's JSON prediction on stdout,
@@ -50,9 +50,13 @@ PRICES = {
     "claude-haiku-4-5":            {"in":  0.80, "out":  4.00},
     "openai/gpt-5.5":              {"in":  5.00, "out": 30.00},
     "x-ai/grok-4.3":               {"in":  1.25, "out":  2.50},
-    "google/gemini-3.1-pro-preview":         {"in":  1.25, "out": 10.00},
+    "google/gemini-3.1-pro-preview": {"in": 1.25, "out": 10.00},
     "meta-llama/llama-4-maverick": {"in":  0.15, "out":  0.60},
-    "deepseek/deepseek-v4-pro":    {"in":  0.435, "out": 0.870},
+    "deepseek/deepseek-v4-pro":    {"in":  0.43, "out":  0.87},
+    "sakana/fugu-ultra":           {"in":  5.00, "out": 30.00},
+    "qwen/qwen3.7-max":            {"in":  1.25, "out":  3.75},
+    "moonshotai/kimi-k2.6":        {"in":  0.66, "out":  3.41},
+    "z-ai/glm-5.2":                {"in":  0.95, "out":  3.00},
 }
 
 SYSTEM = (
