@@ -1,0 +1,9 @@
+name: influencer-marketing-skill-cgallic-claude-sonnet-4-6
+cmd: uv run solution.py --model claude-sonnet-4-6
+profile:
+  model: claude-sonnet-4-6
+  framework: cgallic/kai-cmo-harness
+timeout: 300
+tasks:
+  influencer-marketing-disclosure:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@e4084a9c3b892ccd855ca15b6ed4e4cc5473a7cf#subdirectory=tasks/influencer_marketing_disclosure

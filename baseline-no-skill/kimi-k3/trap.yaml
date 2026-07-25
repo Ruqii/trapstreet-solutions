@@ -1,0 +1,11 @@
+name: baseline-no-skill-kimi-k3
+cmd: uv run ../solution.py --provider openrouter --model moonshotai/kimi-k3
+profile:
+  model: moonshotai/kimi-k3
+  framework: openrouter-api
+timeout: 300
+tasks:
+  python-bugfix-diff:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@d11b109d95592395ef366d848b8952b8407a214d#subdirectory=tasks/code_review_skill/python_bugfix_diff
+  influencer-marketing-disclosure:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@e4084a9c3b892ccd855ca15b6ed4e4cc5473a7cf#subdirectory=tasks/influencer_marketing_disclosure
