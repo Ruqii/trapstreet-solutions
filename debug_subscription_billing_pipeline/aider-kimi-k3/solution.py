@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["aider-chat"]
+# dependencies = ["aider-chat", "audioop-lts; python_version>='3.13'"]
 # ///
 """Framework under test: Aider, run non-interactively, backed by Kimi K3
 (Moonshot AI, routed through litellm's native `moonshot/` provider --
@@ -105,7 +105,24 @@ def diff_tables(before_dir: Path, after_dir: Path) -> list[dict]:
     return edits
 
 
+def load_dotenv(path: Path) -> None:
+    """Minimal .env loader -- .envrc/direnv only activates in an interactive
+    shell that cd's into this directory; trap-cli invokes `uv run
+    solution.py` as a subprocess directly, bypassing direnv entirely, so
+    MOONSHOT_API_KEY must be loaded here or the subprocess never sees it."""
+    if not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip())
+
+
 def main() -> int:
+    load_dotenv(Path(__file__).parent / ".env")
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
     args = parser.parse_args()
@@ -120,6 +137,7 @@ def main() -> int:
         cmd = [
             "aider",
             "--model", args.model,
+            "--model-settings-file", str(Path(__file__).parent / "model_settings.yml"),
             "--yes-always",
             "--no-analytics", "--no-check-update", "--no-show-model-warnings",
             "--no-pretty", "--no-fancy-input", "--no-stream",
