@@ -1,0 +1,9 @@
+name: aider-kimi-k3
+cmd: uv run solution.py --model moonshot/kimi-k3
+profile:
+  model: moonshot/kimi-k3
+  framework: aider
+timeout: 400
+tasks:
+  debug-subscription-billing-pipeline:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@4d7400a7e5c9ace5b4db3f9d6c89b73777419dbc#subdirectory=tasks/debug_subscription_billing_pipeline
