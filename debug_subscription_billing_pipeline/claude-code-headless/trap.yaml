@@ -1,0 +1,9 @@
+name: claude-code-headless-opus-5
+cmd: uv run solution.py --model claude-opus-5
+profile:
+  model: claude-opus-5
+  framework: claude-code-headless
+timeout: 400
+tasks:
+  debug-subscription-billing-pipeline:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@4d7400a7e5c9ace5b4db3f9d6c89b73777419dbc#subdirectory=tasks/debug_subscription_billing_pipeline
