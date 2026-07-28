@@ -123,6 +123,18 @@ def load_dotenv(path: Path) -> None:
 def main() -> int:
     load_dotenv(Path(__file__).parent / ".env")
 
+    # Bridge trap-cli's cost-tracking proxy override to the env var litellm
+    # (which aider calls under the hood) actually reads. trap-cli's moonshot
+    # provider config redirects MOONSHOT_BASE_URL to its local tracking
+    # proxy, assuming a caller that reads that name directly (per its own
+    # comment, "called through the OpenAI SDK") -- but litellm's moonshot
+    # integration reads MOONSHOT_API_BASE instead (confirmed in
+    # litellm/llms/moonshot/chat/transformation.py:
+    # `get_secret_str("MOONSHOT_API_BASE")`), so without this bridge the
+    # proxy override is silently ignored and cost tracking stays null.
+    if "MOONSHOT_BASE_URL" in os.environ:
+        os.environ["MOONSHOT_API_BASE"] = os.environ["MOONSHOT_BASE_URL"]
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
     args = parser.parse_args()
