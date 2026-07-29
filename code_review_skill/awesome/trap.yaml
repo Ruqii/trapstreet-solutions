@@ -5,5 +5,5 @@ profile:
 cmd: uv run python solution.py
 timeout: 300
 tasks:
-  code-review-skills:
+  python-bugfix-diff:
     source: git+https://github.com/trapstreet/trapstreet-tasks.git@5b709376f5b2a8d0ce0e356c3713a0f14fc76c21#subdirectory=tasks/code_review_skill/python_bugfix_diff
