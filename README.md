@@ -20,7 +20,20 @@ trapstreet-solutions/
     nexscope/                           # nexscope-ai/eCommerce-Skills
     mohitagw/                           # mohitagw15856/pm-claude-skills
     cgallic/                            # cgallic/kai-cmo-harness
+  pdf_reader/                           # solutions for tasks/pdf_reader (task slug: pdf-reader)
+    claude-pdf/                         # was Ruqii/claude-pdf — direct vision-LLM, no parser
+    smolagents/                         # was Ruqii/smolagents-claude — CodeAgent + PDF vision tool
+    smolagents-split/                   # was Ruqii/smolagents-claude-split — opus vision / sonnet planner
+    mineru/                             # was Ruqii/mineru-claude — MinerU parser → Claude
+    marker/                             # was Ruqii/marker-claude — Marker parser → Claude
 ```
+
+`pdf_reader/`'s five solutions predate the current `trap-cli` contract: their
+`trap.yaml` uses the old `tasks: {<alias>: {solution:, traptask:, ...}}` shape
+and `solution.py` reads `INPUTS`/`OUTPUTS` env vars instead of the current
+`TRAP_MANIFEST`. They won't run as-is under the current CLI — kept here for
+reference/portfolio purposes, migrate schema + manifest handling before
+re-running any of them.
 
 Each solution subdirectory works exactly like a standalone repo did before —
 `tp run <path> --task <alias> --trust-remote` from inside it, same as always.

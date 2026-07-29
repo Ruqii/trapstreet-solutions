@@ -1,0 +1,9 @@
+[project]
+name = "smolagents-claude-solution"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "anthropic>=0.40.0",
+    "smolagents>=1.10.0",
+    "litellm>=1.50.0",
+]

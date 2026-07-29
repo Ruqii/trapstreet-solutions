@@ -1,0 +1,16 @@
+tasks:
+  pdf-reader:
+    solution: claude-pdf
+    description: Claude PDF agent — direct vision-LLM, no separate parser
+    cmd: uv run python solution.py
+    traptask: ../../trapstreet-tasks/tasks/pdf_reader
+    timeout: 600             # allow for retries on 429/529 with exponential backoff
+    file_outputs:
+      - usage.json           # token counts + cost estimate per case
+    metadata:
+      # The LLM driving the run. Match this to the MODEL env var the solution
+      # uses (defaults to claude-opus-4-7 in solution.py). Leaderboard renders
+      # it in the ENGINE column. Override per-run by editing this line before
+      # `tp run`; future auto-detection will fill it in automatically — see
+      # trapstreet-mvp issue #35.
+      engine: claude-opus-4-7
