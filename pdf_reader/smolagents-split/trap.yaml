@@ -1,16 +1,11 @@
+name: smolagents-claude-split
+profile:
+  model: [claude-opus-4-7, claude-sonnet-4-6]
+  framework: smolagents
+cmd: uv run python solution.py
+# Agent loops are slow; bumped to match smolagents-claude (sonnet planner
+# is actually ~2× faster than opus, so this could be lower in practice).
+timeout: 1200
 tasks:
-  pdf-reader:
-    solution: smolagents-claude-split
-    description: smolagents agent — sonnet for planning, opus for read_pdf vision
-    cmd: uv run python solution.py
-    traptask: ../../trapstreet-tasks/tasks/pdf_reader
-    # Agent loops are slow; bumped to match smolagents-claude (sonnet planner
-    # is actually ~2× faster than opus, so this could be lower in practice).
-    timeout: 1200
-    file_outputs:
-      - usage.json
-    metadata:
-      # Engine string makes the model-split visible at a glance on the
-      # leaderboard. Convention: TOOL_MODEL is the dominant signal (it's
-      # what reads the PDF), so it leads; planner is the cost-saving knob.
-      engine: claude-opus-4-7 (vision) + sonnet-4-6 (planner) + smolagents
+  contract-reader:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@15df03e023980b4bd2b1f3ad6fc50b6f736dd7a7#subdirectory=tasks/pdf_reader

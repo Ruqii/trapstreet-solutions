@@ -138,10 +138,11 @@ def estimate_cost_usd(tool_usage: list[object], agent_in: int, agent_out: int) -
 def main() -> int:
     global _pdf_b64
 
-    inputs = json.loads(os.environ["INPUTS"])
-    outputs = json.loads(os.environ.get("OUTPUTS", "{}"))
-    question = Path(inputs["question.txt"]).read_text().strip()
-    _pdf_b64 = base64.standard_b64encode(Path(inputs["document.pdf"]).read_bytes()).decode()
+    manifest = json.loads(os.environ["TRAP_MANIFEST"])
+    inputs_dir = Path(manifest["inputs_dir"])
+    outputs_dir = Path(manifest["outputs_dir"])
+    question = (inputs_dir / "question.txt").read_text().strip()
+    _pdf_b64 = base64.standard_b64encode((inputs_dir / "document.pdf").read_bytes()).decode()
 
     # Planner runs through LiteLLM; vision tool calls Anthropic directly (above).
     planner = LiteLLMModel(model_id=f"anthropic/{PLANNER_MODEL}")
@@ -159,30 +160,29 @@ def main() -> int:
         answer = agent.run(AGENT_PROMPT.format(question=question))
     print(str(answer).strip())
 
-    if "usage.json" in outputs:
-        monitor = getattr(agent, "monitor", None)
-        agent_in_tokens = int(getattr(monitor, "total_input_token_count", 0) or 0)
-        agent_out_tokens = int(getattr(monitor, "total_output_token_count", 0) or 0)
+    monitor = getattr(agent, "monitor", None)
+    agent_in_tokens = int(getattr(monitor, "total_input_token_count", 0) or 0)
+    agent_out_tokens = int(getattr(monitor, "total_output_token_count", 0) or 0)
 
-        tool_in = sum((getattr(u, "input_tokens", 0) or 0) for u in _tool_usage)
-        tool_out = sum((getattr(u, "output_tokens", 0) or 0) for u in _tool_usage)
-        tool_cache_r = sum((getattr(u, "cache_read_input_tokens", 0) or 0) for u in _tool_usage)
-        tool_cache_w = sum((getattr(u, "cache_creation_input_tokens", 0) or 0) for u in _tool_usage)
+    tool_in = sum((getattr(u, "input_tokens", 0) or 0) for u in _tool_usage)
+    tool_out = sum((getattr(u, "output_tokens", 0) or 0) for u in _tool_usage)
+    tool_cache_r = sum((getattr(u, "cache_read_input_tokens", 0) or 0) for u in _tool_usage)
+    tool_cache_w = sum((getattr(u, "cache_creation_input_tokens", 0) or 0) for u in _tool_usage)
 
-        record = {
-            "planner_model": PLANNER_MODEL,
-            "tool_model": TOOL_MODEL,
-            "agent_framework": "smolagents",
-            "tool_calls": len(_tool_usage),
-            "tool_input_tokens": tool_in,
-            "tool_output_tokens": tool_out,
-            "tool_cache_read_input_tokens": tool_cache_r,
-            "tool_cache_creation_input_tokens": tool_cache_w,
-            "agent_planning_input_tokens": agent_in_tokens,
-            "agent_planning_output_tokens": agent_out_tokens,
-            "usd_cost": estimate_cost_usd(_tool_usage, agent_in_tokens, agent_out_tokens),
-        }
-        Path(outputs["usage.json"]).write_text(json.dumps(record, indent=2))
+    record = {
+        "planner_model": PLANNER_MODEL,
+        "tool_model": TOOL_MODEL,
+        "agent_framework": "smolagents",
+        "tool_calls": len(_tool_usage),
+        "tool_input_tokens": tool_in,
+        "tool_output_tokens": tool_out,
+        "tool_cache_read_input_tokens": tool_cache_r,
+        "tool_cache_creation_input_tokens": tool_cache_w,
+        "agent_planning_input_tokens": agent_in_tokens,
+        "agent_planning_output_tokens": agent_out_tokens,
+        "usd_cost": estimate_cost_usd(_tool_usage, agent_in_tokens, agent_out_tokens),
+    }
+    (outputs_dir / "usage.json").write_text(json.dumps(record, indent=2))
 
     return 0
 
