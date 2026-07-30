@@ -6,4 +6,4 @@ cmd: uv run python solution.py
 timeout: 300
 tasks:
   python-bugfix-diff:
-    source: git+https://github.com/trapstreet/trapstreet-tasks.git@3a841ba1a8ed542178f4bc0482ff0d55a8bbdd29#subdirectory=tasks/code_review_skill/python_bugfix_diff
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@4b4a3cdd13d17b0c84bb7195e67b881e7248a0a6#subdirectory=tasks/code_review_skill/python_bugfix_diff
