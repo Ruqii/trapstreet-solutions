@@ -1,8 +1,8 @@
 name: baseline-no-skill-kimi-k3
-cmd: uv run ../solution.py --provider openrouter --model moonshotai/kimi-k3
+cmd: uv run ../solution.py --provider moonshot --model kimi-k3
 profile:
-  model: moonshotai/kimi-k3
-  framework: openrouter-api
+  model: kimi-k3
+  framework: moonshot-api
 timeout: 300
 tasks:
   python-bugfix-diff:

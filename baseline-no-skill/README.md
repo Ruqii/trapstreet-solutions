@@ -19,7 +19,7 @@ solution.py                 # shared: reads question.txt, calls the provider API
 claude-opus-4-8/trap.yaml   # Anthropic API, claude-opus-4-8
 claude-sonnet-4-6/trap.yaml # Anthropic API, claude-sonnet-4-6
 gpt-5.6-luna-pro/trap.yaml  # OpenRouter, openai/gpt-5.6-luna-pro
-kimi-k3/trap.yaml           # OpenRouter, moonshotai/kimi-k3
+kimi-k3/trap.yaml           # Moonshot API direct, kimi-k3
 ```
 
 Each variant is a subdirectory holding only a `trap.yaml`. The provider and
@@ -33,7 +33,13 @@ Requires [trap](https://github.com/trapstreet/trap) (`tp`) and `uv`
 (`solution.py` declares its `anthropic`/`openai` dependencies via PEP 723
 inline script metadata — no separate `pyproject.toml`/`uv.lock` needed).
 Credentials come from `.env` via direnv — copy `.env.example` to `.env` and
-fill in `ANTHROPIC_API_KEY` and `OPENROUTER_API_KEY`.
+fill in `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, and `MOONSHOT_API_KEY`.
+Since `.envrc` uses `dotenv_if_exists`, direnv loads `.env` into your shell
+the moment you `cd` into this directory or a subdirectory — before you run
+`tp run` — which matters for `MOONSHOT_API_KEY` specifically: trap-cli
+decides whether to intercept Moonshot API calls for cost tracking based on
+whether that env var is already set in the shell `tp run` itself starts
+from, not merely inside the solution.py subprocess.
 
 ```bash
 tp run ./claude-opus-4-8 --task python-bugfix-diff --trust-remote

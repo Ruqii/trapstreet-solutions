@@ -54,9 +54,30 @@ def call_openrouter(model: str, question: str) -> str:
     return (resp.choices[0].message.content or "").strip()
 
 
+def call_moonshot(model: str, question: str) -> str:
+    from openai import OpenAI
+
+    # Read the base URL from MOONSHOT_BASE_URL (not hardcoded) so trap-cli's
+    # cost-tracking proxy override -- which redirects this exact env var --
+    # actually takes effect; trap-cli decides whether to intercept based on
+    # MOONSHOT_API_KEY being set in the environment *before* `tp run` starts
+    # (e.g. via direnv loading .env when you cd into this directory), not
+    # merely inside this subprocess.
+    client = OpenAI(
+        base_url=os.environ.get("MOONSHOT_BASE_URL", "https://api.moonshot.ai/v1"),
+        api_key=os.environ["MOONSHOT_API_KEY"],
+    )
+    resp = client.chat.completions.create(
+        model=model,
+        max_tokens=1024,
+        messages=[{"role": "user", "content": question}],
+    )
+    return (resp.choices[0].message.content or "").strip()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--provider", required=True, choices=["anthropic", "openrouter"])
+    parser.add_argument("--provider", required=True, choices=["anthropic", "openrouter", "moonshot"])
     parser.add_argument("--model", required=True)
     args = parser.parse_args()
 
@@ -66,8 +87,10 @@ def main() -> int:
 
     if args.provider == "anthropic":
         answer = call_anthropic(args.model, question)
-    else:
+    elif args.provider == "openrouter":
         answer = call_openrouter(args.model, question)
+    else:
+        answer = call_moonshot(args.model, question)
 
     print(answer)
     return 0
