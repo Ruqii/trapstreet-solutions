@@ -17,6 +17,7 @@ around a model that would've done the same thing anyway.
 ```
 solution.py                 # shared: reads question.txt, calls the provider API, prints the answer
 claude-opus-4-8/trap.yaml   # Anthropic API, claude-opus-4-8
+claude-opus-5/trap.yaml     # Anthropic API, claude-opus-5
 claude-sonnet-4-6/trap.yaml # Anthropic API, claude-sonnet-4-6
 gpt-5.6-luna-pro/trap.yaml  # OpenRouter, openai/gpt-5.6-luna-pro
 kimi-k3/trap.yaml           # Moonshot API direct, kimi-k3

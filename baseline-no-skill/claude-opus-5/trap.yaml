@@ -1,0 +1,11 @@
+name: baseline-no-skill-claude-opus-5
+cmd: uv run ../solution.py --provider anthropic --model claude-opus-5
+profile:
+  model: claude-opus-5
+  framework: anthropic-api
+timeout: 300
+tasks:
+  python-bugfix-diff:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@93d6ef239e640d3faaf92fafa4c6b0c251ad00cb#subdirectory=tasks/code_review_skill/python_bugfix_diff
+  influencer-marketing-disclosure:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@e4084a9c3b892ccd855ca15b6ed4e4cc5473a7cf#subdirectory=tasks/influencer_marketing_disclosure
