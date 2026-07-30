@@ -70,10 +70,17 @@ def call_moonshot(model: str, question: str) -> str:
     )
     resp = client.chat.completions.create(
         model=model,
-        # Hypothesis: kimi-k3 reasons before answering, and 1024 was too
-        # small a budget -- most calls came back with empty content after
-        # ~39s (vs a few seconds for other models). If this doesn't fix it,
-        # the stderr diagnostic below will show the real finish_reason.
+        # kimi-k3's OpenPlatform API defaults reasoning_effort to "max" --
+        # full, unbounded thinking on every call, even a one-shot "spot the
+        # bug in this snippet" question. That's what was burning 900-8192+
+        # completion tokens per case (2 cases exhausted even an 8192 budget
+        # purely on hidden reasoning, finish_reason="length", empty visible
+        # content) and driving cost/latency far above the other baselines.
+        # "low" is Moonshot's own documented setting for exactly this class
+        # of task ("simple coding queries where sub-second responses matter
+        # more than deep reasoning"). max_tokens stays generous as a ceiling,
+        # not a target -- cost only reflects tokens actually used.
+        extra_body={"reasoning_effort": "low"},
         max_tokens=8192,
         messages=[{"role": "user", "content": question}],
     )
