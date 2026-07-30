@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 
@@ -69,10 +70,26 @@ def call_moonshot(model: str, question: str) -> str:
     )
     resp = client.chat.completions.create(
         model=model,
-        max_tokens=1024,
+        # Hypothesis: kimi-k3 reasons before answering, and 1024 was too
+        # small a budget -- most calls came back with empty content after
+        # ~39s (vs a few seconds for other models). If this doesn't fix it,
+        # the stderr diagnostic below will show the real finish_reason.
+        max_tokens=8192,
         messages=[{"role": "user", "content": question}],
     )
-    return (resp.choices[0].message.content or "").strip()
+    choice = resp.choices[0]
+    content = (choice.message.content or "").strip()
+    if not content:
+        # Diagnostic only -- goes to stderr, never scored (judge reads
+        # stdout only) -- so this is safe to leave in permanently.
+        extra = getattr(choice.message, "model_extra", None) or {}
+        reasoning = extra.get("reasoning_content")
+        print(
+            f"[call_moonshot] empty content: finish_reason={choice.finish_reason!r} "
+            f"reasoning_content_len={len(reasoning) if reasoning else 0}",
+            file=sys.stderr,
+        )
+    return content
 
 
 def main() -> int:
