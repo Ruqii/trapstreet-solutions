@@ -32,9 +32,11 @@ from smolagents import CodeAgent, LiteLLMModel, tool
 MODEL = os.environ.get("MODEL", "claude-opus-4-7")
 MAX_STEPS = int(os.environ.get("AGENT_MAX_STEPS", "6"))
 
-# Approximate Anthropic prices ($/M tokens, May 2026) — same table as claude-pdf
+# Anthropic list prices ($/M tokens). Opus-tier is $5/$25 — the table
+# previously carried $15/$75, which overstated every opus run ~3x.
+# cache_write = 1.25x input (5m TTL), cache_read = 0.1x input. — same table as claude-pdf
 PRICES: dict[str, dict[str, float]] = {
-    "claude-opus-4-7":    {"in": 15.00, "out": 75.00, "cache_read": 1.50,  "cache_write": 18.75},
+    "claude-opus-4-7":    {"in":  5.00, "out": 25.00, "cache_read": 0.50,  "cache_write":  6.25},
     "claude-sonnet-4-6":  {"in":  3.00, "out": 15.00, "cache_read": 0.30,  "cache_write":  3.75},
     "claude-sonnet-4-5-20250929": {"in": 3.00, "out": 15.00, "cache_read": 0.30, "cache_write": 3.75},
 }
