@@ -1,32 +1,36 @@
-"""Docling + Claude — Docling converts the PDF to markdown, Claude answers from the text.
+"""Docling + Claude, in three deliberately separate modes.
 
-Peer of mineru-claude: a local parser front-end instead of sending the PDF to a
-vision model. Docling is the lightest of the three parser solutions — it pulls no
-multi-GB weight bundle and needs no globally-installed CLI, just `pip install docling`
-(RapidOCR rides along).
+The point of splitting this into modes rather than shipping one "smart" pipeline
+is to keep the measurement honest. Docling does not fail on this document because
+its OCR or layout analysis are weak — both are good. It fails on a *routing*
+decision: the PDF has a text layer, docling trusts a present text layer, and this
+one is wrong. The DocuSign font subset is stored at codepoint-29, so "ASSURED
+SHORTHOLD TENANCY" extracts as "$6685(' 6+257+2/' 7(1$1&<".
 
-## Why this file is not just `DocumentConverter().convert(pdf)`
+Deciding whether to trust a text layer is part of what docling *is*. A pipeline
+that rasterises first has patched out docling's worst weakness before measuring
+it, and would report a number that says more about the harness than the library.
+So each mode does exactly one thing, and the gaps between them are the finding:
 
-The AST PDF has a text layer, and that text layer is wrong. Its DocuSign font subset
-is stored at `codepoint - 29`, so "ASSURED SHORTHOLD TENANCY" extracts as
-"$6685(' 6+257+2/' 7(1$1&<". Docling's default pipeline trusts the text layer when
-one is present, so it happily returns ~101k characters of mojibake, at full speed,
-with no error. Measured on this document: 0/8 gold-answer strings recoverable.
+  --mode vanilla   DocumentConverter().convert(pdf)          docling, out of the box
+  --mode ocr       + OcrMode.FULL_PAGE                        docling, configured
+  --mode raster    PyMuPDF -> page PNGs -> docling            docling, with the
+                                                              routing decision
+                                                              taken away from it
 
-That is the interesting failure. "Has a text layer" and "has a *usable* text layer"
-are different questions, and a parser that only asks the first one fails silently
-here rather than loudly. (pdf-inspector fails identically; MinerU does not, because
-it OCRs unconditionally.)
+Measured on this document (16 pages, gold-answer strings recoverable):
 
-So this solution does not trust any single extraction path:
+  vanilla   ~50s     0/8    ~101k chars of mojibake, no error, full speed
+  ocr       ~1050s   5/8    readable prose, but loses 2100/2400, 13.2, 144/480
+  raster    ~1100s   7/7 on the page tested individually
 
-  1. convert with OCR forced over the whole page (`OcrMode.FULL_PAGE`)
-  2. **check the result is readable English** before using it
-  3. if it isn't, rasterise the pages with PyMuPDF — destroying the text layer
-     outright — and convert the images instead
-
-Step 2 is the load-bearing one. Without it a bad conversion reaches Claude as
-context and the run scores zero with no indication of why.
+An earlier version of this file tried to pick a mode at runtime by checking
+whether the output "looked like English". That check passed on the ocr output
+(1355 hits on common words) while half the gold numbers were missing, so the
+fallback never fired and the solution answered from an incomplete document. The
+lesson is in the failure: readable is not the same as complete, and a heuristic
+that conflates them is worse than no heuristic, because it also hides the two
+clean measurements underneath. Hence: no runtime branching. Pick a mode, own it.
 
 Contract: reads TRAP_MANIFEST ({inputs_dir, outputs_dir}), prints the answer to
 stdout, writes usage.json into outputs_dir.
@@ -42,13 +46,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-# The model is a CLI argument, never an env var — trap.yaml's profile.model is
-# self-reported, and an env var drifts from it silently, putting the wrong engine
-# on the leaderboard.
 MODEL = ""
 
-# Anthropic list prices ($/M tokens). No prompt caching on this path (only markdown
-# is sent, never the PDF), so billed == full price and the two agree by construction.
+# Anthropic list prices ($/M tokens). No prompt caching on this path (only the
+# converted markdown is sent, never the PDF), so billed == full input price.
 PRICES = {
     "claude-opus-4-8":   {"in": 5.00, "out": 25.00},
     "claude-opus-4-7":   {"in": 5.00, "out": 25.00},
@@ -57,15 +58,10 @@ PRICES = {
 }
 
 CACHE_DIR = Path("/tmp/trapstreet-docling-cache")
-
-# Every case ships the same document, so parse once and reuse. Keyed by content
-# hash, not filename — the v2 PDF is a redacted rebuild of v1's and must not hit
-# a v1 cache entry.
 RASTER_DPI = 200
 
 SYSTEM = """You answer questions from a UK Assured Shorthold Tenancy (AST) agreement
-that has been converted to markdown by Docling. The conversion is OCR-based and may
-contain minor character errors.
+that has been converted to markdown by Docling. The conversion may contain errors.
 
 - Answer ONLY based on what the document says -- no general-knowledge fill-in.
 - State your answer clearly and commit to it; don't hedge if the document contains the answer.
@@ -76,41 +72,41 @@ contain minor character errors.
 """
 
 
-def _looks_like_english(md: str) -> bool:
-    """Is this a real conversion, or the -29-shifted mojibake?
+def convert_vanilla(pdf: Path) -> str:
+    """What you get from `pip install docling` and the first line of its README."""
+    from docling.document_converter import DocumentConverter
 
-    Counts common words this contract is dense with. A good conversion of the AST
-    scores in the hundreds; the mojibake scores 0, because every letter is shifted
-    out of the alphabet. The threshold is deliberately far from both.
+    return DocumentConverter().convert(str(pdf)).document.export_to_markdown()
+
+
+def convert_ocr(pdf: Path) -> str:
+    """Docling with OCR forced over the whole page — a documented, first-class
+    option. Still docling's own pipeline; no external library involved.
+
+    NB: `ocr_options.force_full_page_ocr = True` is deprecated and silently does
+    nothing on 2.117; `mode = OcrMode.FULL_PAGE` is the setting that takes effect.
     """
-    hits = sum(len(re.findall(rf"\b{w}\b", md, re.I)) for w in ("the", "tenant", "landlord", "rent"))
-    return hits >= 100
-
-
-def _convert_pdf_direct(pdf: Path) -> str:
-    """Docling straight at the PDF, with OCR forced over the full page."""
     from docling.document_converter import DocumentConverter, PdfFormatOption
     from docling.datamodel.base_models import InputFormat
-    from docling.datamodel.pipeline_options import PdfPipelineOptions
+    from docling.datamodel.pipeline_options import OcrMode, PdfPipelineOptions
 
     opts = PdfPipelineOptions()
     opts.do_ocr = True
     opts.do_table_structure = True
-    try:  # non-deprecated knob; `force_full_page_ocr` is deprecated and a no-op here
-        from docling.datamodel.pipeline_options import OcrMode
-        opts.ocr_options.mode = OcrMode.FULL_PAGE
-    except ImportError:  # older docling
-        opts.ocr_options.force_full_page_ocr = True
-
-    conv = DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)})
+    opts.ocr_options.mode = OcrMode.FULL_PAGE
+    conv = DocumentConverter(
+        format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
+    )
     return conv.convert(str(pdf)).document.export_to_markdown()
 
 
-def _convert_rasterised(pdf: Path) -> str:
-    """Render each page to PNG, then convert the images.
+def convert_raster(pdf: Path) -> str:
+    """Render each page to PNG first, then convert the images.
 
-    The fallback. A page image has no text layer at all, so there is nothing for
-    Docling to mistakenly trust — OCR is the only path available to it.
+    A page image has no text layer, so docling has no bad text layer to trust —
+    the routing decision is made by the harness, not by docling. This is the mode
+    that measures docling's OCR and layout in isolation, and the one whose score
+    should be read as "docling plus engineering", not "docling".
     """
     import fitz  # pymupdf
     from docling.document_converter import DocumentConverter
@@ -127,26 +123,26 @@ def _convert_rasterised(pdf: Path) -> str:
     return "\n\n".join(pages)
 
 
-def extract_markdown(pdf: Path) -> str:
-    """PDF -> markdown, cached by content hash. Verifies before trusting."""
+MODES = {"vanilla": convert_vanilla, "ocr": convert_ocr, "raster": convert_raster}
+
+
+def extract_markdown(pdf: Path, mode: str) -> str:
+    """Convert once per (document, mode) and reuse. Every case ships the same PDF."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     h = hashlib.sha1(pdf.read_bytes()).hexdigest()[:16]
-    cache_file = CACHE_DIR / f"{h}.md"
+    cache_file = CACHE_DIR / f"{h}.{mode}.md"
     if cache_file.exists():
         return cache_file.read_text()
 
-    md = _convert_pdf_direct(pdf)
-    if not _looks_like_english(md):
-        # Diagnostic on stderr only — stdout is the graded answer.
-        print(
-            f"[docling] direct conversion returned {len(md)} chars of unreadable text "
-            f"(broken text layer); falling back to rasterised pages",
-            file=sys.stderr,
-        )
-        md = _convert_rasterised(pdf)
-        if not _looks_like_english(md):
-            sys.exit("[docling] both conversion paths produced unreadable text — refusing "
-                     "to answer from garbage. Inspect the PDF's font encoding.")
+    md = MODES[mode](pdf)
+
+    # Diagnostics only — printed to stderr, never acted on. Deciding what to do
+    # about a bad conversion is the mode's job, made once, up front.
+    readable = sum(len(re.findall(rf"\b{w}\b", md, re.I))
+                   for w in ("the", "tenant", "landlord", "rent"))
+    print(f"[docling:{mode}] {len(md)} chars, {readable} common-word hits "
+          f"({'readable' if readable >= 100 else 'UNREADABLE — likely the broken text layer'})",
+          file=sys.stderr)
 
     cache_file.write_text(md)
     return md
@@ -163,8 +159,7 @@ def ask(system: str, user: str) -> tuple[str, dict]:
     in_ = getattr(u, "input_tokens", 0) or 0
     out = getattr(u, "output_tokens", 0) or 0
     p = PRICES.get(MODEL)
-    answer = next((b.text for b in msg.content if b.type == "text"), "")
-    return answer, {
+    return next((b.text for b in msg.content if b.type == "text"), ""), {
         "model": MODEL,
         "input_tokens": in_,
         "output_tokens": out,
@@ -177,7 +172,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True,
                     help="full model id; must match profile.model in trap.yaml")
-    MODEL = ap.parse_args().model
+    ap.add_argument("--mode", required=True, choices=sorted(MODES),
+                    help="which conversion path to measure; see module docstring")
+    args = ap.parse_args()
+    MODEL = args.model
 
     manifest = json.loads(os.environ["TRAP_MANIFEST"])
     inputs_dir = Path(manifest["inputs_dir"])
@@ -185,13 +183,14 @@ def main() -> int:
     outputs_dir.mkdir(parents=True, exist_ok=True)
 
     question = (inputs_dir / "question.txt").read_text().strip()
-    contract_md = extract_markdown(inputs_dir / "document.pdf")
+    contract_md = extract_markdown(inputs_dir / "document.pdf", args.mode)
 
     answer, usage = ask(
         SYSTEM,
         f"CONTRACT (markdown):\n\n{contract_md}\n\nQUESTION: {question}\n\nAnswer:",
     )
     print(answer.strip())
+    usage["docling_mode"] = args.mode
     (outputs_dir / "usage.json").write_text(json.dumps(usage, indent=2))
     return 0
 

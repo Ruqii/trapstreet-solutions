@@ -1,0 +1,12 @@
+name: pdf-reader-docling-vanilla
+# docling out of the box. Expected to score near zero: this PDF's text layer is a -29-shifted DocuSign font subset, docling trusts a present text layer, and returns ~101k chars of mojibake with no error. That is the honest measurement of the library on this document.
+# Shared solution.py one level up; this dir carries only the mode + model, so the
+# three variants cannot drift apart in anything except the thing being compared.
+cmd: uv run python ../solution.py --mode vanilla --model claude-sonnet-4-6
+profile:
+  model: claude-sonnet-4-6
+  framework: docling
+timeout: 900
+tasks:
+  pdf-reader-v2:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0022f1061e9208ea84603b86a8720f2239f31b2c#subdirectory=tasks/pdf_reader_v2
