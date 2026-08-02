@@ -1,0 +1,9 @@
+[project]
+name = "docling-claude-solution"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "docling>=2.117.0",   # pulls docling-parse, rapidocr, torch — no separate CLI needed
+    "pymupdf>=1.24.0",    # rasterisation fallback when the text layer is unusable
+]

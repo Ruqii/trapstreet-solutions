@@ -1,0 +1,16 @@
+name: pdf-reader-claude-pdf-haiku
+# Same solution.py as ../claude-pdf, different model. Kept as a sibling variant
+# dir (rather than a MODEL env var) so the model that runs and the model on the
+# leaderboard are the same string in the same file and cannot drift.
+#
+# Purpose: measure the task's ceiling. If the cheapest current model also scores
+# 20/20, pdf-reader-v2 has no headroom left and needs harder cases; a lower score
+# means there is a real gradient for stronger models to sit on.
+cmd: uv run python ../claude-pdf/solution.py --model claude-haiku-4-5-20251001
+profile:
+  model: claude-haiku-4-5-20251001
+  framework: anthropic-api
+timeout: 600
+tasks:
+  pdf-reader-v2:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0022f1061e9208ea84603b86a8720f2239f31b2c#subdirectory=tasks/pdf_reader_v2
