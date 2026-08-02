@@ -11,6 +11,7 @@ On a cache miss this shells out to `mineru`; with the cache warm it never runs.
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import os
@@ -18,28 +19,21 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Short aliases so you can run `MODEL=haiku tp run test` instead of the full ID.
-# Anthropic models (no "/") go through the Anthropic SDK; anything with a "/" is
-# treated as an OpenRouter slug. Unrecognized values pass through unchanged, so
-# full IDs / any OpenRouter slug (e.g. "qwen/qwen-2.5-72b-instruct") work too.
-MODEL_ALIASES = {
-    # Anthropic (direct, cost-tracked by trap's proxy)
-    "opus": "claude-opus-4-8",
-    "sonnet": "claude-sonnet-4-6",
-    "haiku": "claude-haiku-4-5-20251001",
-    "claude-opus": "claude-opus-4-8",
-    "claude-sonnet": "claude-sonnet-4-6",
-    "claude-haiku": "claude-haiku-4-5-20251001",
-    # OpenRouter (via OPENROUTER_API_KEY)
-    "gpt4o": "openai/gpt-4o",
-    "gpt4o-mini": "openai/gpt-4o-mini",
-    "gemini": "google/gemini-2.5-flash",
-    "gemini-lite": "google/gemini-2.5-flash-lite",
-    "deepseek": "deepseek/deepseek-chat",
-    "llama": "meta-llama/llama-3.3-70b-instruct",
+# The model is a CLI argument, never an env var or an alias table: trap.yaml's
+# profile.model is self-reported, and anything that resolves indirectly can
+# drift from it silently, putting the wrong engine on the leaderboard. Pass the
+# full id. A "/" routes to OpenRouter; anything else goes to Anthropic.
+MODEL = ""
+
+# Anthropic list prices ($/M tokens). No caching on this path — the PDF is
+# parsed to markdown locally and only text is sent — so billed == full price.
+PRICES = {
+    "claude-opus-4-8":   {"in": 5.00, "out": 25.00},
+    "claude-opus-4-7":   {"in": 5.00, "out": 25.00},
+    "claude-sonnet-4-6": {"in": 3.00, "out": 15.00},
+    "claude-haiku-4-5-20251001": {"in": 1.00, "out": 5.00},
 }
-_model = os.environ.get("MODEL") or "sonnet"   # unset OR empty -> default
-MODEL = MODEL_ALIASES.get(_model.lower(), _model)
+
 CACHE_DIR = Path("/tmp/trapstreet-mineru-cache")
 
 
@@ -81,7 +75,7 @@ def extract_markdown(pdf_path: Path) -> str:
     return md
 
 
-def ask(system: str, user: str) -> str:
+def ask(system: str, user: str) -> tuple[str, dict]:
     """Route to Anthropic (Claude IDs) or OpenRouter (any slug containing '/')."""
     if "/" in MODEL:  # OpenRouter — OpenAI-compatible API
         from openai import OpenAI
@@ -95,21 +89,43 @@ def ask(system: str, user: str) -> str:
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
         )
-        return resp.choices[0].message.content
+        return resp.choices[0].message.content, {}
     from anthropic import Anthropic  # Claude — direct, cost-tracked by trap's proxy
     msg = Anthropic().messages.create(
         model=MODEL, max_tokens=1024, system=system,
         messages=[{"role": "user", "content": user}],
     )
-    return msg.content[0].text
+    u = msg.usage
+    in_ = getattr(u, "input_tokens", 0) or 0
+    out = getattr(u, "output_tokens", 0) or 0
+    p = PRICES.get(MODEL)
+    return msg.content[0].text, {
+        "model": MODEL,
+        "input_tokens": in_,
+        "output_tokens": out,
+        "usd_cost": round((in_ * p["in"] + out * p["out"]) / 1_000_000, 6) if p else None,
+    }
 
 
 def main() -> None:
-    inputs = json.loads(os.environ["INPUTS"])
-    question = Path(inputs["question.txt"]).read_text().strip()
-    contract_md = extract_markdown(Path(inputs["document.pdf"]))
+    global MODEL
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", required=True,
+                    help="full model id; must match profile.model in trap.yaml")
+    MODEL = ap.parse_args().model
+
+    manifest = json.loads(os.environ["TRAP_MANIFEST"])
+    inputs_dir = Path(manifest["inputs_dir"])
+    outputs_dir = Path(manifest["outputs_dir"])
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+
+    question = (inputs_dir / "question.txt").read_text().strip()
+    contract_md = extract_markdown(inputs_dir / "document.pdf")
     user = f"CONTRACT (markdown):\n\n{contract_md}\n\nQUESTION: {question}\n\nAnswer:"
-    print(ask(SYSTEM, user).strip())
+    answer, usage = ask(SYSTEM, user)
+    print(answer.strip())
+    if usage:
+        (outputs_dir / "usage.json").write_text(json.dumps(usage, indent=2))
 
 
 if __name__ == "__main__":

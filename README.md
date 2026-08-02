@@ -20,20 +20,40 @@ trapstreet-solutions/
     nexscope/                           # nexscope-ai/eCommerce-Skills
     mohitagw/                           # mohitagw15856/pm-claude-skills
     cgallic/                            # cgallic/kai-cmo-harness
-  pdf_reader/                           # solutions for tasks/pdf_reader (task slug: pdf-reader)
-    claude-pdf/                         # was Ruqii/claude-pdf — direct vision-LLM, no parser
-    smolagents/                         # was Ruqii/smolagents-claude — CodeAgent + PDF vision tool
-    smolagents-split/                   # was Ruqii/smolagents-claude-split — opus vision / sonnet planner
-    mineru/                             # was Ruqii/mineru-claude — MinerU parser → Claude
-    marker/                             # was Ruqii/marker-claude — Marker parser → Claude
+  pdf_reader/                           # solutions for the pdf-reader-v2 task
+    claude-pdf/                         # direct vision-LLM, no parser          [migrated]
+    smolagents-split/                   # opus vision / sonnet planner          [migrated]
+    mineru/                             # MinerU parser → Claude                [migrated]
+    smolagents/                         # CodeAgent + PDF vision tool           [not migrated]
+    marker/                             # Marker parser → Claude               [ABANDONED]
 ```
 
-`pdf_reader/`'s five solutions predate the current `trap-cli` contract: their
-`trap.yaml` uses the old `tasks: {<alias>: {solution:, traptask:, ...}}` shape
-and `solution.py` reads `INPUTS`/`OUTPUTS` env vars instead of the current
-`TRAP_MANIFEST`. They won't run as-is under the current CLI — kept here for
-reference/portfolio purposes, migrate schema + manifest handling before
-re-running any of them.
+### `pdf_reader/` migration status
+
+All five predate the current `trap-cli` contract (old `tasks: {<alias>:
+{solution:, traptask:}}` yaml, `INPUTS`/`OUTPUTS` env vars instead of
+`TRAP_MANIFEST`). Three are now migrated and target **`pdf-reader-v2`**, pinned
+at the commit the platform has registered:
+
+| | contract | task alias | notes |
+|---|---|---|---|
+| `claude-pdf` | current | `pdf-reader-v2` | smoke-tested 2/2; the cheapest and fastest of the three |
+| `smolagents-split` | current | `pdf-reader-v2` | migrated, **never run** — agent loop, cost unmeasured |
+| `mineru` | current | `pdf-reader-v2` | migrated, **never run** — first case shells out to MinerU (~18 min CPU) |
+| `smolagents` | old | `pdf-reader` | not migrated |
+| `marker` | old | *(dead path)* | **abandoned — do not migrate** |
+
+`marker` is abandoned: it pulls ~2 GB of Surya weights, is forced onto CPU
+(the models exceed the 9 GB MPS limit on Apple Silicon), and its `traptask:`
+points at `tasks/pdf_reader/tenancy_agreement`, a path that no longer exists.
+The code is kept for reference only — it is not expected to run again.
+
+**Cost accounting.** Every migrated solution charges cached tokens at the full
+input rate in its `usd_cost`, and reports what was actually paid separately as
+`usd_cost_billed`. This task reuses one document across all 20 cases, so
+crediting the cache would rank an artefact of the task shape rather than real
+efficiency. Note `tp`'s own `cost.by_model` is *not* the graded figure — the
+grader sums `metrics.usd_cost`, which comes from these tables.
 
 Each solution subdirectory works exactly like a standalone repo did before —
 `tp run <path> --task <alias> --trust-remote` from inside it, same as always.

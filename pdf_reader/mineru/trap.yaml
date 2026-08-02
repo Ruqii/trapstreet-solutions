@@ -1,13 +1,18 @@
+name: pdf-reader-mineru
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported and would drift from a MODEL env var silently, putting the
+# wrong engine in the leaderboard's ENGINE column.
+cmd: uv run python solution.py --model claude-sonnet-4-6
+profile:
+  model: claude-sonnet-4-6
+  framework: mineru
+# First case shells out to the MinerU CLI (~18 min on CPU) and caches the
+# markdown in /tmp/trapstreet-mineru-cache keyed by PDF content hash; every
+# later case is a plain LLM call. NB: v2 ships a redacted PDF, so its hash
+# differs from v1's — the cache starts cold on the first v2 run.
+timeout: 1800
 tasks:
-  test:
-    description: MinerU parser → Claude reasoning
-    cmd: uv run python solution.py
-    traptask:
-      # Uses your local canonical checkout of the tasks repo (kept current via git pull).
-      local: ../../trapstreet-tasks/tasks/pdf_reader
-    timeout: 1200            # first case runs MinerU OCR (~18min CPU) if cache cold;
-                            # markdown is cached in /tmp/trapstreet-mineru-cache after.
-    metadata:
-      # The LLM driving the run; match the MODEL env the solution uses (default below).
-      # Switch model via MODEL in ../trapstreet-cli/.env. Renders in the leaderboard ENGINE column.
-      engine: claude-sonnet-4-6
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
+  # The previous alias was `test`, which is not a task on the platform.
+  pdf-reader-v2:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0022f1061e9208ea84603b86a8720f2239f31b2c#subdirectory=tasks/pdf_reader_v2
