@@ -9,4 +9,4 @@ profile:
 timeout: 900
 tasks:
   pdf-reader-v2:
-    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0022f1061e9208ea84603b86a8720f2239f31b2c#subdirectory=tasks/pdf_reader_v2
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@ae4bf6f84276a8a461f9dd44a70086f680ba9729#subdirectory=tasks/pdf_reader_v2
