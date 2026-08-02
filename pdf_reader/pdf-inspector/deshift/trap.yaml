@@ -1,0 +1,12 @@
+name: pdf-reader-pdf-inspector-deshift
+# pdf-inspector's raw extract_text(), then a codepoint shift discovered by brute force over -64..+64. The repair is ~15 lines in solution.py, NOT library capability — read the gap to the vanilla variant as the size of the harness's contribution. 41ms, 16/16 gold strings, 11/11 structural associations intact.
+# Shared solution.py one level up; this dir carries only the mode + model, so the
+# two variants cannot drift apart in anything except the thing being compared.
+cmd: uv run python ../solution.py --mode deshift --model claude-sonnet-4-6
+profile:
+  model: claude-sonnet-4-6
+  framework: pdf-inspector
+timeout: 600
+tasks:
+  pdf-reader-v2:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0022f1061e9208ea84603b86a8720f2239f31b2c#subdirectory=tasks/pdf_reader_v2

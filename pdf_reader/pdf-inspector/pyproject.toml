@@ -1,0 +1,8 @@
+[project]
+name = "pdf-inspector-claude-solution"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "pdf-inspector>=0.2.6",   # pure-Rust parser, prebuilt wheels, no models, no OCR
+]
