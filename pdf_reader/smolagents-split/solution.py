@@ -129,12 +129,8 @@ def estimate_cost_usd(tool_usage: list[object], agent_in: int, agent_out: int) -
             cr = getattr(u, "cache_read_input_tokens", 0) or 0
             in_ = getattr(u, "input_tokens", 0) or 0
             out = getattr(u, "output_tokens", 0) or 0
-            total += (
-                in_ * tool_p["in"]
-                + cw * tool_p["cache_write"]
-                + cr * tool_p["cache_read"]
-                + out * tool_p["out"]
-            )
+            # Full input price on cached tokens — see module docstring note.
+            total += (in_ + cw + cr) * tool_p["in"] + out * tool_p["out"]
     if plan_p:
         total += agent_in * plan_p["in"] + agent_out * plan_p["out"]
     return round(total / 1_000_000, 6)

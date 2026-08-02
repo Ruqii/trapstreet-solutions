@@ -129,7 +129,9 @@ def estimate_cost_usd(model: str, tool_usage: list[object], agent_in: int, agent
         cr = getattr(u, "cache_read_input_tokens", 0) or 0
         in_ = getattr(u, "input_tokens", 0) or 0
         out = getattr(u, "output_tokens", 0) or 0
-        total += in_ * p["in"] + cw * p["cache_write"] + cr * p["cache_read"] + out * p["out"]
+        # Full input price on cached tokens — the task reuses one document across
+        # every case, so crediting the cache would rank an artefact, not efficiency.
+        total += (in_ + cw + cr) * p["in"] + out * p["out"]
     total += agent_in * p["in"] + agent_out * p["out"]
     return round(total / 1_000_000, 6)
 

@@ -46,16 +46,40 @@ Rules:
 """
 
 
+def _tokens(usage) -> tuple[int, int, int, int]:
+    return (
+        getattr(usage, "input_tokens", 0) or 0,
+        getattr(usage, "cache_creation_input_tokens", 0) or 0,
+        getattr(usage, "cache_read_input_tokens", 0) or 0,
+        getattr(usage, "output_tokens", 0) or 0,
+    )
+
+
 def estimate_cost_usd(usage, model: str) -> float:
-    """Compute USD cost. Per Anthropic spec, `input_tokens` is the count NOT
-    counted as cache read/write — so we sum directly, no subtraction."""
+    """USD cost at FULL input price — cached tokens are charged as if they were
+    never cached.
+
+    This task reuses one document across every case, so prompt caching makes the
+    2nd..Nth case nearly free. That is an artefact of the task shape, not a real
+    efficiency, and crediting it would rank a solution well for a saving that
+    disappears the moment the corpus has N distinct documents. Charging
+    input + cache_creation + cache_read at the full input rate answers the
+    question the leaderboard actually cares about: what would this cost per
+    document? `usd_cost_billed` alongside it reports what was really paid.
+    """
     p = PRICES.get(model)
     if not p:
         return 0.0
-    cw = getattr(usage, "cache_creation_input_tokens", 0) or 0
-    cr = getattr(usage, "cache_read_input_tokens", 0) or 0
-    in_ = getattr(usage, "input_tokens", 0) or 0
-    out = getattr(usage, "output_tokens", 0) or 0
+    in_, cw, cr, out = _tokens(usage)
+    return round(((in_ + cw + cr) * p["in"] + out * p["out"]) / 1_000_000, 6)
+
+
+def billed_cost_usd(usage, model: str) -> float:
+    """What was actually paid, at cache rates. Informational only."""
+    p = PRICES.get(model)
+    if not p:
+        return 0.0
+    in_, cw, cr, out = _tokens(usage)
     return round((in_ * p["in"] + cw * p["cache_write"] + cr * p["cache_read"] + out * p["out"]) / 1_000_000, 6)
 
 
@@ -108,6 +132,7 @@ def main() -> int:
         "cache_creation_input_tokens": getattr(u, "cache_creation_input_tokens", 0) or 0,
         "cache_read_input_tokens": getattr(u, "cache_read_input_tokens", 0) or 0,
         "usd_cost": estimate_cost_usd(u, args.model),
+        "usd_cost_billed": billed_cost_usd(u, args.model),
     }, indent=2))
 
     return 0
