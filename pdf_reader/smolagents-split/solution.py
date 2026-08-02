@@ -19,6 +19,7 @@ Expected outcome vs smolagents-claude (the single-opus version):
 """
 from __future__ import annotations
 
+import argparse
 import base64
 import json
 import os
@@ -30,11 +31,13 @@ from anthropic import Anthropic
 from smolagents import CodeAgent, LiteLLMModel, tool
 
 # Two-model split: planner is the agent's reasoning brain, tool is the
-# extraction worker. Both default to a value that demonstrates the split,
-# but each is independently overridable for experimentation.
-PLANNER_MODEL = os.environ.get("PLANNER_MODEL", "claude-sonnet-4-6")
-TOOL_MODEL = os.environ.get("TOOL_MODEL", os.environ.get("MODEL", "claude-opus-4-7"))
-MAX_STEPS = int(os.environ.get("AGENT_MAX_STEPS", "6"))
+# extraction worker. Both are set from CLI arguments in main(), never from
+# env vars — trap.yaml's profile.model is self-reported, and an env var
+# drifts from it silently, putting the wrong engine on the leaderboard.
+# Module-level so the @tool function below can close over TOOL_MODEL.
+PLANNER_MODEL = ""
+TOOL_MODEL = ""
+MAX_STEPS = 6
 
 # Approximate Anthropic prices ($/M tokens, May 2026)
 PRICES: dict[str, dict[str, float]] = {
@@ -136,11 +139,19 @@ def estimate_cost_usd(tool_usage: list[object], agent_in: int, agent_out: int) -
 
 
 def main() -> int:
-    global _pdf_b64
+    global _pdf_b64, PLANNER_MODEL, TOOL_MODEL, MAX_STEPS
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--planner-model", required=True, help="agent's reasoning model")
+    ap.add_argument("--tool-model", required=True, help="vision model behind read_pdf")
+    ap.add_argument("--max-steps", type=int, default=6)
+    args = ap.parse_args()
+    PLANNER_MODEL, TOOL_MODEL, MAX_STEPS = args.planner_model, args.tool_model, args.max_steps
 
     manifest = json.loads(os.environ["TRAP_MANIFEST"])
     inputs_dir = Path(manifest["inputs_dir"])
     outputs_dir = Path(manifest["outputs_dir"])
+    outputs_dir.mkdir(parents=True, exist_ok=True)
     question = (inputs_dir / "question.txt").read_text().strip()
     _pdf_b64 = base64.standard_b64encode((inputs_dir / "document.pdf").read_bytes()).decode()
 

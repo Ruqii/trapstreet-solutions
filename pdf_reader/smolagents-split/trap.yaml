@@ -1,11 +1,17 @@
-name: smolagents-claude-split
+name: pdf-reader-smolagents-split
+# Both models are literal CLI arguments, never env vars — profile.model below
+# is self-reported and would drift from a PLANNER_MODEL/TOOL_MODEL env var
+# silently, putting the wrong engine in the leaderboard's ENGINE column.
+cmd: uv run python solution.py --tool-model claude-opus-4-7 --planner-model claude-sonnet-4-6
 profile:
   model: [claude-opus-4-7, claude-sonnet-4-6]
   framework: smolagents
-cmd: uv run python solution.py
 # Agent loops are slow; bumped to match smolagents-claude (sonnet planner
 # is actually ~2× faster than opus, so this could be lower in practice).
 timeout: 1200
 tasks:
-  contract-reader:
-    source: git+https://github.com/trapstreet/trapstreet-tasks.git@15df03e023980b4bd2b1f3ad6fc50b6f736dd7a7#subdirectory=tasks/pdf_reader
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits
+  # to. The previous alias was `contract-reader`, which is not a task that
+  # exists on the platform, so this could never have submitted successfully.
+  pdf-reader-v2:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0022f1061e9208ea84603b86a8720f2239f31b2c#subdirectory=tasks/pdf_reader_v2

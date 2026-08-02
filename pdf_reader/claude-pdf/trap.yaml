@@ -1,16 +1,13 @@
+name: pdf-reader-claude-pdf
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported, so a MODEL env var would drift from it silently and put the
+# wrong engine in the leaderboard's ENGINE column.
+cmd: uv run python solution.py --model claude-opus-4-7
+profile:
+  model: claude-opus-4-7
+  framework: anthropic-api
+timeout: 600             # allow for retries on 429/529 with exponential backoff
 tasks:
-  pdf-reader:
-    solution: claude-pdf
-    description: Claude PDF agent — direct vision-LLM, no separate parser
-    cmd: uv run python solution.py
-    traptask: ../../trapstreet-tasks/tasks/pdf_reader
-    timeout: 600             # allow for retries on 429/529 with exponential backoff
-    file_outputs:
-      - usage.json           # token counts + cost estimate per case
-    metadata:
-      # The LLM driving the run. Match this to the MODEL env var the solution
-      # uses (defaults to claude-opus-4-7 in solution.py). Leaderboard renders
-      # it in the ENGINE column. Override per-run by editing this line before
-      # `tp run`; future auto-detection will fill it in automatically — see
-      # trapstreet-mvp issue #35.
-      engine: claude-opus-4-7
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
+  pdf-reader-v2:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0022f1061e9208ea84603b86a8720f2239f31b2c#subdirectory=tasks/pdf_reader_v2

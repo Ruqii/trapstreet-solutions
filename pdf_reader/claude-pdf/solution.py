@@ -7,9 +7,15 @@ signature blocks).
 Prompt caching: the PDF block is marked with cache_control so case 2-N
 re-use the same 16-page document at ~10% input cost (90% savings after
 the first call).
+
+Contract: reads TRAP_MANIFEST ({inputs_dir, outputs_dir}), prints the answer
+to stdout. The model is a CLI argument, not an env var — profile.model in
+trap.yaml is self-reported and drifts from a MODEL env var silently, which
+would put the wrong engine on the leaderboard.
 """
 from __future__ import annotations
 
+import argparse
 import base64
 import json
 import os
@@ -18,11 +24,10 @@ from pathlib import Path
 
 from anthropic import Anthropic
 
-MODEL = os.environ.get("MODEL", "claude-opus-4-7")
-
 # Approximate Anthropic prices ($/M tokens, May 2026)
 PRICES = {
     "claude-opus-4-7":    {"in": 15.00, "out": 75.00, "cache_read": 1.50,  "cache_write": 18.75},
+    "claude-opus-4-8":    {"in": 15.00, "out": 75.00, "cache_read": 1.50,  "cache_write": 18.75},
     "claude-sonnet-4-6":  {"in":  3.00, "out": 15.00, "cache_read": 0.30,  "cache_write":  3.75},
     "claude-sonnet-4-5-20250929": {"in": 3.00, "out": 15.00, "cache_read": 0.30, "cache_write": 3.75},
 }
@@ -39,7 +44,7 @@ Rules:
 """
 
 
-def estimate_cost_usd(usage: dict, model: str) -> float:
+def estimate_cost_usd(usage, model: str) -> float:
     """Compute USD cost. Per Anthropic spec, `input_tokens` is the count NOT
     counted as cache read/write — so we sum directly, no subtraction."""
     p = PRICES.get(model)
@@ -53,15 +58,20 @@ def estimate_cost_usd(usage: dict, model: str) -> float:
 
 
 def main() -> int:
-    inputs = json.loads(os.environ["INPUTS"])
-    outputs = json.loads(os.environ.get("OUTPUTS", "{}"))
-    question = Path(inputs["question.txt"]).read_text().strip()
-    pdf_bytes = Path(inputs["document.pdf"]).read_bytes()
-    pdf_b64 = base64.standard_b64encode(pdf_bytes).decode()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", required=True, help="Anthropic model id; must match profile.model in trap.yaml")
+    args = ap.parse_args()
+
+    manifest = json.loads(os.environ["TRAP_MANIFEST"])
+    inputs_dir = Path(manifest["inputs_dir"])
+    outputs_dir = Path(manifest["outputs_dir"])
+
+    question = (inputs_dir / "question.txt").read_text().strip()
+    pdf_b64 = base64.standard_b64encode((inputs_dir / "document.pdf").read_bytes()).decode()
 
     client = Anthropic(max_retries=10)  # absorb transient 429/529 with backoff
     msg = client.messages.create(
-        model=MODEL,
+        model=args.model,
         max_tokens=1024,
         system=SYSTEM,
         messages=[{
@@ -74,7 +84,7 @@ def main() -> int:
                         "media_type": "application/pdf",
                         "data": pdf_b64,
                     },
-                    "cache_control": {"type": "ephemeral"},  # cache the 1.8MB PDF across all cases
+                    "cache_control": {"type": "ephemeral"},  # cache the PDF across all cases
                 },
                 {"type": "text", "text": f"Question: {question}\n\nAnswer:"},
             ],
@@ -84,18 +94,19 @@ def main() -> int:
     answer = next((b.text for b in msg.content if b.type == "text"), "").strip()
     print(answer)
 
-    # Write usage.json if trap declared it as a file_output
-    if "usage.json" in outputs:
-        u = msg.usage
-        usage_record = {
-            "model": MODEL,
-            "input_tokens": getattr(u, "input_tokens", 0),
-            "output_tokens": getattr(u, "output_tokens", 0),
-            "cache_creation_input_tokens": getattr(u, "cache_creation_input_tokens", 0) or 0,
-            "cache_read_input_tokens": getattr(u, "cache_read_input_tokens", 0) or 0,
-            "usd_cost": estimate_cost_usd(u, MODEL),
-        }
-        Path(outputs["usage.json"]).write_text(json.dumps(usage_record, indent=2))
+    # Per-case token counts + cost estimate. Under the current contract the
+    # solution writes into outputs_dir directly; the old schema's
+    # `file_outputs:` declaration + OUTPUTS env var no longer exist.
+    u = msg.usage
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+    (outputs_dir / "usage.json").write_text(json.dumps({
+        "model": args.model,
+        "input_tokens": getattr(u, "input_tokens", 0),
+        "output_tokens": getattr(u, "output_tokens", 0),
+        "cache_creation_input_tokens": getattr(u, "cache_creation_input_tokens", 0) or 0,
+        "cache_read_input_tokens": getattr(u, "cache_read_input_tokens", 0) or 0,
+        "usd_cost": estimate_cost_usd(u, args.model),
+    }, indent=2))
 
     return 0
 
