@@ -6,11 +6,22 @@ cmd: uv run python solution.py --model claude-sonnet-4-6
 profile:
   model: claude-sonnet-4-6
   framework: mineru
-# First case shells out to the MinerU CLI (~18 min on CPU) and caches the
+# First case shells out to the MinerU CLI (~19 min on CPU) and caches the
 # markdown in /tmp/trapstreet-mineru-cache keyed by PDF content hash; every
 # later case is a plain LLM call. NB: v2 ships a redacted PDF, so its hash
 # differs from v1's — the cache starts cold on the first v2 run.
-timeout: 1800
+#
+# The cache must be cold when `tp run` starts, or the parse happens outside
+# the measured run and the leaderboard's LATENCY column (whole-run wall clock)
+# understates this solution by an order of magnitude — 92s instead of ~1250s.
+# Warm it separately and mineru looks faster than a parser that is 25000x
+# quicker to parse. Delete /tmp/trapstreet-mineru-cache before running.
+#
+# 3600, not 1800: the parse measured 1148s, leaving only 64% headroom. A run
+# that overshoots is killed mid-case and scores 0, which reads as MinerU
+# extracting the wrong answer rather than as a timeout — the most misleading
+# failure available.
+timeout: 3600
 tasks:
   # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
   # The previous alias was `test`, which is not a task on the platform.
