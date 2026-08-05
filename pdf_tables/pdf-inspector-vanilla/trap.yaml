@@ -1,0 +1,14 @@
+name: pdf-tables-pdf-inspector-vanilla
+# pdf-inspector's headline API (process_pdf().markdown), used as its README
+# shows it. On this document the text layer is clean, so unlike the tenancy
+# task there is nothing to repair — what is being measured here is purely
+# whether the markdown converter preserves table structure.
+cmd: uv run python ../../pdf_reader/pdf-inspector/solution.py --mode vanilla --model claude-sonnet-4-6
+profile:
+  model: claude-sonnet-4-6
+  framework: pdf-inspector
+timeout: 600
+tasks:
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
+  pdf-tables:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@f17b9b41456031b187bd57d8234047bd92e65b84#subdirectory=tasks/pdf_tables

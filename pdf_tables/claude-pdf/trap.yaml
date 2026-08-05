@@ -1,0 +1,17 @@
+name: pdf-tables-claude-pdf
+# The control run for the pdf_tables task: the PDF goes to the model as page
+# images, so no parser sits in between. If these questions cannot be answered
+# from the rendered pages, the questions are wrong — not the parsers. That is
+# what this solution is for, and why it runs before any parser solution.
+#
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported and would drift from a MODEL env var silently.
+cmd: uv run python ../../pdf_reader/claude-pdf/solution.py --model claude-opus-4-7
+profile:
+  model: claude-opus-4-7
+  framework: anthropic-api
+timeout: 900
+tasks:
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
+  pdf-tables:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@f17b9b41456031b187bd57d8234047bd92e65b84#subdirectory=tasks/pdf_tables
