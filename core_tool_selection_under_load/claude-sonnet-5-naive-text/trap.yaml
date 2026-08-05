@@ -1,0 +1,9 @@
+name: core-tool-selection-claude-sonnet-5-naive-text
+cmd: uv run ../solution_naive.py --model claude-sonnet-5
+profile:
+  model: claude-sonnet-5
+  framework: anthropic-api-flat-text-prompt
+timeout: 120
+tasks:
+  core-tool-selection-under-load:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@e721eace0fb0251e7cbab24e7f4114dcc417a96b#subdirectory=tasks/core_tool_selection_under_load

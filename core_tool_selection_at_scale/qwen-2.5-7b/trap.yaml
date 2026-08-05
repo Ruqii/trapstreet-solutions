@@ -1,0 +1,9 @@
+name: core-tool-selection-at-scale-qwen-2.5-7b
+cmd: uv run ../solution.py --provider openrouter --model qwen/qwen-2.5-7b-instruct --effort low
+profile:
+  model: qwen/qwen-2.5-7b-instruct
+  framework: openrouter-api-native-tools
+timeout: 300
+tasks:
+  core-tool-selection-at-scale:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@e721eace0fb0251e7cbab24e7f4114dcc417a96b#subdirectory=tasks/core_tool_selection_at_scale

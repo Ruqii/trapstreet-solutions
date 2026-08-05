@@ -1,0 +1,9 @@
+name: core-tool-selection-claude-sonnet-5
+cmd: uv run ../solution.py --provider anthropic --model claude-sonnet-5
+profile:
+  model: claude-sonnet-5
+  framework: anthropic-api-native-tools
+timeout: 120
+tasks:
+  core-tool-selection-under-load:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@e721eace0fb0251e7cbab24e7f4114dcc417a96b#subdirectory=tasks/core_tool_selection_under_load
