@@ -10,14 +10,19 @@ profile:
 # is actually ~2× faster than opus, so this could be lower in practice).
 timeout: 1200
 tasks:
-  # Alias must equal the trapstreet task_id — it is what `tp submit` submits
-  # to. The previous alias was `contract-reader`, which is not a task that
-  # exists on the platform, so this could never have submitted successfully.
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
   pdf-reader-v2:
     source: git+https://github.com/trapstreet/trapstreet-tasks.git@ae4bf6f84276a8a461f9dd44a70086f680ba9729#subdirectory=tasks/pdf_reader_v2
-  # Targets uat.trapstreet.run's `pdf-reader` task specifically (its own
-  # registration, pinned to its own commit — distinct from prod's pdf-reader
-  # and from pdf-reader-v2 above). Submit this one with:
-  #   TRAPSTREET_URL=https://uat.trapstreet.run tp submit --task pdf-reader
+  # uat.trapstreet.run's own `pdf-reader` registration (commit fb579fae) —
+  # DO NOT run: its judge.py/grader.py predate the TRAPTASK_MANIFEST
+  # migration (still read TRAPTASK_PAYLOAD) and crash on the current CLI.
+  # Left here as a record; needs UAT to republish this task_id before reuse.
   pdf-reader:
     source: git+https://github.com/trapstreet/trapstreet-tasks.git@fb579fae4cd1bc093e14c59b7daa2fffcee0b088#subdirectory=tasks/pdf_reader
+  # uat.trapstreet.run/tasks/contract-reader — same tasks/pdf_reader content,
+  # different task_id/registration, pinned to a commit that's already on the
+  # current TRAPTASK_MANIFEST contract (verified: judge.py/grader.py both
+  # read TRAPTASK_MANIFEST at this commit). Submit with:
+  #   TRAPSTREET_URL=https://uat.trapstreet.run tp submit --task contract-reader
+  contract-reader:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@15df03e023980b4bd2b1f3ad6fc50b6f736dd7a7#subdirectory=tasks/pdf_reader
