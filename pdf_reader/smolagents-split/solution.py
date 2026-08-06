@@ -46,6 +46,8 @@ PRICES: dict[str, dict[str, float]] = {
     "claude-opus-4-7":    {"in":  5.00, "out": 25.00, "cache_read": 0.50,  "cache_write":  6.25},
     "claude-sonnet-4-6":  {"in":  3.00, "out": 15.00, "cache_read": 0.30,  "cache_write":  3.75},
     "claude-sonnet-4-5-20250929": {"in": 3.00, "out": 15.00, "cache_read": 0.30, "cache_write": 3.75},
+    "claude-opus-5":      {"in":  5.00, "out": 25.00, "cache_read": 0.50,  "cache_write":  6.25},
+    "claude-sonnet-5":    {"in":  3.00, "out": 15.00, "cache_read": 0.30,  "cache_write":  3.75},
 }
 
 _pdf_b64: str = ""

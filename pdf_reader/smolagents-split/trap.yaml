@@ -2,9 +2,9 @@ name: pdf-reader-smolagents-split
 # Both models are literal CLI arguments, never env vars — profile.model below
 # is self-reported and would drift from a PLANNER_MODEL/TOOL_MODEL env var
 # silently, putting the wrong engine in the leaderboard's ENGINE column.
-cmd: uv run python solution.py --tool-model claude-opus-4-7 --planner-model claude-sonnet-4-6
+cmd: uv run python solution.py --tool-model claude-opus-5 --planner-model claude-sonnet-5
 profile:
-  model: [claude-opus-4-7, claude-sonnet-4-6]
+  model: [claude-opus-5, claude-sonnet-5]
   framework: smolagents
 # Agent loops are slow; bumped to match smolagents-claude (sonnet planner
 # is actually ~2× faster than opus, so this could be lower in practice).
