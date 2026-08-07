@@ -41,10 +41,38 @@ PRICES = {
     "moonshotai/kimi-k2.6":                  {"in":  0.730, "out": 3.490},
 }
 
-SYSTEM = (
+TASK_SYSTEM = (
     "You are taking a personality questionnaire. Answer from YOUR own point of view as honestly as you can. "
     "Do not refuse, hedge, or qualify. Reply with the requested JSON object only — no markdown, no commentary."
 )
+
+# PERSONA names a file in personas/ whose text is prepended to the system prompt —
+# the position a CLAUDE.md or soul.md occupies in a real agent harness. "bare" (the
+# default) prepends nothing and is the control condition.
+#
+# Whatever this is set to also travels to the board as usage.json's `persona` field.
+# It has to: trapstreet identifies a solution by (commit, repo_path) alone, so two
+# runs of this commit that differ only in PERSONA share a row identity and the second
+# one's name is discarded — without the field they'd be indistinguishable.
+PERSONA = os.environ.get("PERSONA", "bare")
+PERSONA_DIR = Path(__file__).parent / "personas"
+
+
+def build_system() -> str:
+    if PERSONA == "bare":
+        return TASK_SYSTEM
+    path = PERSONA_DIR / f"{PERSONA}.md"
+    if not path.exists():
+        # Loud, not silent: a typo'd PERSONA that quietly fell back to bare would
+        # produce a row labelled with a persona that never reached the model.
+        available = sorted(p.stem for p in PERSONA_DIR.glob("*.md"))
+        raise SystemExit(
+            f"PERSONA={PERSONA!r} not found at {path}. Available: {available or '(none)'} (or 'bare')"
+        )
+    return f"{path.read_text().strip()}\n\n---\n\n{TASK_SYSTEM}"
+
+
+SYSTEM = build_system()
 
 
 def call_anthropic(question: str) -> tuple[str, dict]:
@@ -135,6 +163,7 @@ def main() -> int:
     outputs_dir.mkdir(parents=True, exist_ok=True)
     (outputs_dir / "usage.json").write_text(json.dumps({
         "model": MODEL,
+        "persona": PERSONA,
         **usage,
         "usd_cost": estimate_cost_usd(usage, MODEL),
     }, indent=2))
