@@ -1,0 +1,15 @@
+name: pdf-mixed-scan-docling-ocr
+# Second OCR pipeline, for whether the two differ once both reach the
+# image half. Rasterises and re-reads every page.
+#
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported and would drift from a MODEL env var silently.
+cmd: uv run python ../../pdf_reader/docling/solution.py --mode ocr --model claude-sonnet-5
+profile:
+  model: claude-sonnet-5
+  framework: docling
+timeout: 3600
+tasks:
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
+  pdf-mixed-scan:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@6afe24b4173db4ffb4c83da81c7cc93ce8a50943#subdirectory=tasks/pdf_mixed_scan

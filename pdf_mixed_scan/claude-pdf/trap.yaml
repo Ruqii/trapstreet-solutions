@@ -1,0 +1,16 @@
+name: pdf-mixed-scan-claude-pdf
+# No parser at all: the pages go to the model as images. It reaches both
+# halves without any extraction step, so it answers a question the parser
+# solutions cannot — whether a parser is needed here in the first place.
+#
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported and would drift from a MODEL env var silently.
+cmd: uv run python ../../pdf_reader/claude-pdf/solution.py --model claude-sonnet-5
+profile:
+  model: claude-sonnet-5
+  framework: claude-pdf
+timeout: 900
+tasks:
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
+  pdf-mixed-scan:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@6afe24b4173db4ffb4c83da81c7cc93ce8a50943#subdirectory=tasks/pdf_mixed_scan
