@@ -99,7 +99,12 @@ def ask(system: str, user: str) -> tuple[str, dict]:
     in_ = getattr(u, "input_tokens", 0) or 0
     out = getattr(u, "output_tokens", 0) or 0
     p = PRICES.get(MODEL)
-    return msg.content[0].text, {
+    # Take the first TEXT block, not the first block. Models that emit a
+    # thinking block put it at index 0, and content[0].text then raises
+    # AttributeError — which took out nineteen of twenty cases on the first
+    # run against claude-sonnet-5. The other solutions in this repo already
+    # did it this way; this one had been left behind.
+    return next((b.text for b in msg.content if b.type == "text"), ""), {
         "model": MODEL,
         "input_tokens": in_,
         "output_tokens": out,
