@@ -13,4 +13,4 @@ timeout: 900
 tasks:
   # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
   pdf-mixed-scan:
-    source: git+https://github.com/trapstreet/trapstreet-tasks.git@40726ebeb9de8600424193971b58700ca04e0052#subdirectory=tasks/pdf_mixed_scan
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@4b883ce7a252ba23ae4c4518ee9ce473ea9f4192#subdirectory=tasks/pdf_mixed_scan
