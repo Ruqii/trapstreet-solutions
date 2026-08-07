@@ -11,4 +11,10 @@ timeout: 600 # heavy reasoning models can take well over a minute
 
 tasks:
   mbti-profile: # alias doubles as the trapstreet task_id on submit
-    source: ../../trapstreet-tasks/tasks/personality/mbti_profile
+    # Pinned, not a local path. Two reasons: a local checkout with any unrelated
+    # edit in it reports provenance.task as unanchored, and the leaderboard hides
+    # unanchored runs — you'd pay for the run and get nothing rankable. And submit
+    # matches this commit EXACTLY against the registered version, so running the
+    # pin is the only way to know the run is submittable before spending the money.
+    # Must be kept equal to whatever mbti-profile is registered at on trapstreet.
+    source: git+https://github.com/trapstreet/trapstreet-tasks@8a6b53f55f70b8cba09fe45f662063501c9a5420#subdirectory=tasks/personality/mbti_profile
