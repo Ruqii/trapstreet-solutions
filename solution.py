@@ -5,16 +5,11 @@ Anthropic-prefixed models go through the Anthropic SDK; everything else goes
 through OpenRouter (one key, many models).
 
 Set ONE of these env vars per run:
-  MODEL=claude-opus-4-7                          (Anthropic; uses ANTHROPIC_API_KEY)
-  MODEL=claude-sonnet-4-6                        (Anthropic)
+  MODEL=claude-opus-5                            (Anthropic; uses ANTHROPIC_API_KEY)
+  MODEL=claude-sonnet-5                          (Anthropic)
   MODEL=claude-haiku-4-5                         (Anthropic)
-  MODEL=openai/gpt-5.5                           (OpenRouter — OpenAI flagship)
-  MODEL=x-ai/grok-4.3                            (OpenRouter — xAI Grok)
-  MODEL=meta-llama/llama-4-maverick              (OpenRouter — Meta open flagship)
-  MODEL=deepseek/deepseek-v4-pro                 (OpenRouter — DeepSeek flagship)
-  MODEL=qwen/qwen3-235b-a22b                     (OpenRouter — Alibaba MoE)
-  MODEL=minimax/minimax-m2.7                     (OpenRouter — MiniMax China)
-  MODEL=moonshotai/kimi-k2.6                     (OpenRouter — Moonshot China)
+  MODEL=openai/gpt-5.6-sol                       (OpenRouter — OpenAI flagship)
+  MODEL=moonshotai/kimi-k3                       (OpenRouter — Moonshot)
 """
 from __future__ import annotations
 
@@ -23,22 +18,27 @@ import os
 import sys
 from pathlib import Path
 
-DEFAULT_MODEL = "claude-opus-4-7"
+DEFAULT_MODEL = "claude-opus-5"
 MODEL = os.environ.get("MODEL", DEFAULT_MODEL)
 
-# Per-million-token prices (May 2026 approximate).
+# Per-million-token prices, verified 2026-08-08 against the Anthropic pricing table
+# and OpenRouter's live /api/v1/models endpoint.
+#
+# For Anthropic models this is only a fallback — trap's cost proxy intercepts those
+# calls and measures spend directly. For everything else it is the ONLY cost figure
+# the run will ever have, because the proxy does not intercept OpenRouter. Re-check
+# it against OpenRouter's endpoint before adding a model; the previous table had
+# drifted badly (it priced Opus 4.7 at $15/$75 when the real rate was $5/$25).
 PRICES = {
-    "claude-opus-4-7":                       {"in": 15.00, "out": 75.00},
-    "claude-sonnet-4-6":                     {"in":  3.00, "out": 15.00},
-    "claude-haiku-4-5":                      {"in":  0.80, "out":  4.00},
-    # Latest model slugs and per-million-token prices (OpenRouter, May 2026)
-    "openai/gpt-5.5":                        {"in":  5.00, "out": 30.00},
-    "x-ai/grok-4.3":                         {"in":  1.25, "out":  2.50},
-    "meta-llama/llama-4-maverick":           {"in":  0.15, "out":  0.60},
-    "deepseek/deepseek-v4-pro":              {"in":  0.435, "out": 0.870},
-    "qwen/qwen3-235b-a22b":                  {"in":  0.455, "out": 1.820},
-    "minimax/minimax-m2.7":                  {"in":  0.279, "out": 1.200},
-    "moonshotai/kimi-k2.6":                  {"in":  0.730, "out": 3.490},
+    # Anthropic, direct
+    "claude-opus-5":                         {"in":  5.00, "out": 25.00},
+    "claude-sonnet-5":                       {"in":  3.00, "out": 15.00},
+    "claude-haiku-4-5":                      {"in":  1.00, "out":  5.00},
+    # OpenRouter
+    "openai/gpt-5.6-sol":                    {"in":  5.00, "out": 30.00},
+    "openai/gpt-5.6-terra":                  {"in":  1.00, "out":  6.00},
+    "openai/gpt-5.6-luna":                   {"in":  0.10, "out":  0.60},
+    "moonshotai/kimi-k3":                    {"in":  3.00, "out": 15.00},
 }
 
 TASK_SYSTEM = (
@@ -81,7 +81,12 @@ def call_anthropic(question: str) -> tuple[str, dict]:
     client = Anthropic(max_retries=10)
     msg = client.messages.create(
         model=MODEL,
-        max_tokens=1024,
+        # Same reason as the OpenRouter path: this budget covers thinking as well as
+        # the answer. Claude Opus 5 thinks by default (omitting `thinking` runs
+        # adaptive, unlike Opus 4.8 and earlier where omitting it meant no thinking),
+        # so the old 1024 was enough for the model to think and then get cut off
+        # mid-JSON — which the judge scores 0.0 after the call is already paid for.
+        max_tokens=8192,
         system=SYSTEM,
         messages=[{"role": "user", "content": question}],
     )

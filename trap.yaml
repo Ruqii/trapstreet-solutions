@@ -8,7 +8,7 @@
 # environment said, and `name:` below is recorded once and never overwritten.
 name: mbti-multi-model
 profile:
-  model: claude-opus-4-7
+  model: claude-opus-5 # self-reported; keep in step with the MODEL you export
 
 setup_cmd: uv sync
 cmd: uv run python solution.py
