@@ -1,8 +1,14 @@
+# One solution, many models: MODEL env var picks the engine (Anthropic direct, or
+# anything else via OpenRouter). Set MODEL before `tp run` — it also decides what
+# `profile.model` below should say for the run you're about to submit.
+name: mbti-multi-model
+profile:
+  model: claude-opus-4-7
+
+setup_cmd: uv sync
+cmd: uv run python solution.py
+timeout: 600 # heavy reasoning models can take well over a minute
+
 tasks:
-  mbti-profile:
-    description: MBTI questionnaire — routes to MODEL env var (Anthropic or OpenRouter)
-    cmd: uv run python solution.py
-    traptask: ../../trapstreet-tasks/tasks/personality/mbti_profile
-    timeout: 600   # heavy reasoning models can take >60s
-    file_outputs:
-      - usage.json
+  mbti-profile: # alias doubles as the trapstreet task_id on submit
+    source: ../../trapstreet-tasks/tasks/personality/mbti_profile

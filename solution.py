@@ -120,20 +120,24 @@ def estimate_cost_usd(usage: dict, model: str) -> float:
 
 
 def main() -> int:
-    inputs = json.loads(os.environ["INPUTS"])
-    outputs = json.loads(os.environ.get("OUTPUTS", "{}"))
-    question = Path(inputs["question.txt"]).read_text()
+    # TRAP_MANIFEST is {"inputs_dir": ..., "outputs_dir": ...} — directories, not the
+    # old per-file INPUTS/OUTPUTS name→path maps.
+    manifest = json.loads(os.environ["TRAP_MANIFEST"])
+    question = (Path(manifest["inputs_dir"]) / "question.txt").read_text()
 
     is_anthropic = MODEL.startswith("claude-")
     answer, usage = (call_anthropic if is_anthropic else call_openrouter)(question)
     print(answer)
 
-    if "usage.json" in outputs:
-        Path(outputs["usage.json"]).write_text(json.dumps({
-            "model": MODEL,
-            **usage,
-            "usd_cost": estimate_cost_usd(usage, MODEL),
-        }, indent=2))
+    # The judge reads this for the model name, and — for OpenRouter models, which trap's
+    # cost proxy does not intercept — it is the only cost figure the run will ever have.
+    outputs_dir = Path(manifest["outputs_dir"])
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+    (outputs_dir / "usage.json").write_text(json.dumps({
+        "model": MODEL,
+        **usage,
+        "usd_cost": estimate_cost_usd(usage, MODEL),
+    }, indent=2))
 
     return 0
 
