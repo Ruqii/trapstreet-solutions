@@ -20,4 +20,4 @@ tasks:
   # confusion. Must stay equal to the commit registered on trapstreet — submit
   # matches {repo, commit, subdirectory} exactly and 404s on any mismatch.
   do-llms-dream-of-intj:
-    source: git+https://github.com/trapstreet/trapstreet-tasks@792617f8ec46d4585046e15dc771ca14f020b710#subdirectory=tasks/personality/mbti_profile
+    source: git+https://github.com/trapstreet/trapstreet-tasks@cf92b6690b7c8b3430602dd3b72a8528c96e636b#subdirectory=tasks/personality/mbti_profile
