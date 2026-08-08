@@ -1,7 +1,11 @@
 # trapstreet-solutions
 
-All [trapstreet.run](https://trapstreet.run) solutions in one place, organized by task
-so they're findable — replaces a growing pile of separate single-purpose repos.
+My own reference solutions for [trapstreet.run](https://trapstreet.run) tasks, organized by
+task so they're findable — one repo instead of a growing pile of single-purpose ones.
+
+These are examples, not a registry. Solutions live in **their author's own repository**;
+anyone can publish from anywhere public and submit a run. This is just where mine happen to
+live.
 
 ```
 trapstreet-solutions/
