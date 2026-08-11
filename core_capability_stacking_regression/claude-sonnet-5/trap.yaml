@@ -1,0 +1,9 @@
+name: claude-sonnet-5
+cmd: uv run ../solution.py --provider anthropic --model claude-sonnet-5
+profile:
+  model: claude-sonnet-5
+  framework: anthropic-api
+timeout: 300
+tasks:
+  core-capability-stacking-regression:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@8abf610e57d298f2fafa232c522a3b2afd0ce620#subdirectory=tasks/core_capability_stacking_regression
