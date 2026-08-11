@@ -1,0 +1,9 @@
+[project]
+name = "pdf-mixed-scan-pdf-inspector-routed"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "pdf-inspector>=0.2.6",
+    "pymupdf>=1.24",          # renderer for the pages pdf-inspector flags
+]
