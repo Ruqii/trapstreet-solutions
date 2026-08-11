@@ -1,0 +1,5 @@
+[project]
+name = "pdf-mixed-scan-pymupdf"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["anthropic>=0.40.0", "pymupdf>=1.24"]
