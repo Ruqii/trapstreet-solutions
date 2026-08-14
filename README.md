@@ -24,6 +24,9 @@ trapstreet-solutions/
     nexscope/                           # nexscope-ai/eCommerce-Skills
     mohitagw/                           # mohitagw15856/pm-claude-skills
     cgallic/                            # cgallic/kai-cmo-harness
+  mbti_profile/                         # solutions for the do-llms-dream-of-intj task
+    mbti-multi-model/                   # one solution; MODEL and PERSONA pick the cell
+      personas/                         # the .md files a run can carry
   pdf_reader/                           # solutions for the pdf-reader-v2 task
     claude-pdf/                         # direct vision-LLM, no parser          [migrated]
     smolagents-split/                   # opus vision / sonnet planner          [migrated]
@@ -31,6 +34,26 @@ trapstreet-solutions/
     smolagents/                         # CodeAgent + PDF vision tool           [not migrated]
     marker/                             # Marker parser → Claude               [ABANDONED]
 ```
+
+### `mbti_profile/` — one solution, two env vars
+
+`MODEL` picks the model. `PERSONA` names a file in `mbti-multi-model/personas/` whose
+text is prepended to the system prompt — the slot a `CLAUDE.md` or `soul.md` occupies in
+a real agent harness. `PERSONA=bare` prepends nothing and is the control.
+
+```bash
+MODEL=claude-opus-5 PERSONA=warm tp run . --task do-llms-dream-of-intj --trust-remote
+```
+
+`PERSONA` also travels to the board inside `usage.json`, and the task page keys its cards
+on `(model, persona)`. That field is the *only* thing that keeps a persona run distinct
+there: the platform identifies a solution by `(commit, repo_path)`, so two runs of one
+commit that differ only in environment collapse onto the same row identity. Adding a
+persona file without also reporting its name produces a card that silently pools two
+different conditions.
+
+Which files exist, why each one is there, and what a new one has to avoid to stay
+interpretable are in [`mbti-multi-model/personas/README.md`](mbti_profile/mbti-multi-model/personas/README.md).
 
 ### `pdf_reader/` migration status
 
