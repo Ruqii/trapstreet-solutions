@@ -1,44 +1,54 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "anthropic",
+#     "openai",
+# ]
+# ///
 """Multi-model solution for the MBTI profile task.
 
-Routes the same prompt through different LLMs based on the `MODEL` env var.
-Anthropic-prefixed models go through the Anthropic SDK; everything else goes
-through OpenRouter (one key, many models).
+Shared across model variants: each `<model>/trap.yaml` names its own model as a
+literal `cmd:` argument, so the model that runs and the model that gets reported
+are the same string in the same file and cannot drift apart.
 
-Set ONE of these env vars per run:
-  MODEL=claude-opus-5                            (Anthropic; uses ANTHROPIC_API_KEY)
-  MODEL=claude-sonnet-5                          (Anthropic)
-  MODEL=claude-haiku-4-5                         (Anthropic)
-  MODEL=openai/gpt-5.6-sol                       (OpenRouter — OpenAI flagship)
-  MODEL=moonshotai/kimi-k3                       (OpenRouter — Moonshot)
+PERSONA stays an environment variable, deliberately. The model is the solution's
+identity; the persona is the experimental condition varied *across* runs of one
+identity, and baking it into `cmd:` would mean a directory per (model, persona)
+cell for no gain.
+
+  PERSONA=bare            personas/ is not read at all — the control
+  PERSONA=<name>          personas/<name>.md is prepended to the system prompt
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
 import sys
 from pathlib import Path
 
-DEFAULT_MODEL = "claude-opus-5"
-MODEL = os.environ.get("MODEL", DEFAULT_MODEL)
-
-# Per-million-token prices, verified 2026-08-08 against the Anthropic pricing table
-# and OpenRouter's live /api/v1/models endpoint.
+# Per-million-token prices. Anthropic verified against the published pricing
+# table; everything else against OpenRouter's live /api/v1/models on 2026-08-15.
 #
-# For Anthropic models this is only a fallback — trap's cost proxy intercepts those
-# calls and measures spend directly. For everything else it is the ONLY cost figure
-# the run will ever have, because the proxy does not intercept OpenRouter. Re-check
-# it against OpenRouter's endpoint before adding a model; the previous table had
+# For Anthropic models this is only a fallback — trap's cost proxy intercepts
+# those calls and measures spend directly. For everything else it is the ONLY
+# cost figure the run will ever have, because the proxy does not intercept
+# OpenRouter. Re-check before adding a model; the table this replaced had
 # drifted badly (it priced Opus 4.7 at $15/$75 when the real rate was $5/$25).
 PRICES = {
     # Anthropic, direct
     "claude-opus-5":                         {"in":  5.00, "out": 25.00},
     "claude-sonnet-5":                       {"in":  3.00, "out": 15.00},
     "claude-haiku-4-5":                      {"in":  1.00, "out":  5.00},
-    # OpenRouter
+    # OpenRouter — OpenAI
+    "openai/gpt-5.6-sol-pro":                {"in":  5.00, "out": 30.00},
     "openai/gpt-5.6-sol":                    {"in":  5.00, "out": 30.00},
     "openai/gpt-5.6-terra":                  {"in":  1.00, "out":  6.00},
     "openai/gpt-5.6-luna":                   {"in":  0.10, "out":  0.60},
+    # OpenRouter — everyone else
+    "deepseek/deepseek-v4-pro-0813":         {"in":  0.43, "out":  0.87},
+    "z-ai/glm-5.2":                          {"in":  1.19, "out":  3.74},
     "moonshotai/kimi-k3":                    {"in":  3.00, "out": 15.00},
 }
 
@@ -51,12 +61,18 @@ TASK_SYSTEM = (
 # the position a CLAUDE.md or soul.md occupies in a real agent harness. "bare" (the
 # default) prepends nothing and is the control condition.
 #
-# Whatever this is set to also travels to the board as usage.json's `persona` field.
-# It has to: trapstreet identifies a solution by (commit, repo_path) alone, so two
-# runs of this commit that differ only in PERSONA share a row identity and the second
-# one's name is discarded — without the field they'd be indistinguishable.
+# Whatever this is set to also travels to the board as usage.json's `persona` field,
+# and the task page keys its cards on (model, persona). Without the field two runs
+# of one commit that differ only in environment would pool onto the same card, and
+# the persona condition would be invisible.
 PERSONA = os.environ.get("PERSONA", "bare")
 PERSONA_DIR = Path(__file__).parent / "personas"
+
+# Enough headroom for a reasoning model to think and *then* answer. This budget
+# covers thinking as well as the response text, and a run that gets cut off
+# mid-JSON scores 0.0 after the call is already paid for — so the cap is set
+# well above what any of these models needs rather than close to it.
+MAX_TOKENS = 16384
 
 
 def build_system() -> str:
@@ -81,18 +97,13 @@ def build_system() -> str:
 SYSTEM = build_system()
 
 
-def call_anthropic(question: str) -> tuple[str, dict]:
+def call_anthropic(model: str, question: str) -> tuple[str, dict]:
     from anthropic import Anthropic
 
     client = Anthropic(max_retries=10)
     msg = client.messages.create(
-        model=MODEL,
-        # Same reason as the OpenRouter path: this budget covers thinking as well as
-        # the answer. Claude Opus 5 thinks by default (omitting `thinking` runs
-        # adaptive, unlike Opus 4.8 and earlier where omitting it meant no thinking),
-        # so the old 1024 was enough for the model to think and then get cut off
-        # mid-JSON — which the judge scores 0.0 after the call is already paid for.
-        max_tokens=8192,
+        model=model,
+        max_tokens=MAX_TOKENS,
         system=SYSTEM,
         messages=[{"role": "user", "content": question}],
     )
@@ -107,7 +118,7 @@ def call_anthropic(question: str) -> tuple[str, dict]:
     return text, usage
 
 
-def call_openrouter(question: str) -> tuple[str, dict]:
+def call_openrouter(model: str, question: str) -> tuple[str, dict]:
     from openai import OpenAI
 
     api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -123,8 +134,8 @@ def call_openrouter(question: str) -> tuple[str, dict]:
         },
     )
     resp = client.chat.completions.create(
-        model=MODEL,
-        max_tokens=8192,                # reasoning models burn tokens before the answer
+        model=model,
+        max_tokens=MAX_TOKENS,
         messages=[
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": question},
@@ -150,7 +161,11 @@ def call_openrouter(question: str) -> tuple[str, dict]:
 
 
 def estimate_cost_usd(usage: dict, model: str) -> float:
-    p = PRICES.get(model, {"in": 0, "out": 0})
+    p = PRICES.get(model)
+    if p is None:
+        # Zero would be indistinguishable from a genuinely free call, and this is
+        # the only cost figure an OpenRouter run ever gets. Fail instead.
+        raise SystemExit(f"No price entry for {model!r} — add one to PRICES (check OpenRouter's /api/v1/models)")
     in_tokens = usage.get("input_tokens", 0) + usage.get("cache_creation_input_tokens", 0)
     return round(
         (in_tokens * p["in"] + usage.get("output_tokens", 0) * p["out"]) / 1_000_000,
@@ -159,24 +174,30 @@ def estimate_cost_usd(usage: dict, model: str) -> float:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--provider", required=True, choices=["anthropic", "openrouter"])
+    parser.add_argument("--model", required=True)
+    args = parser.parse_args()
+
     # TRAP_MANIFEST is {"inputs_dir": ..., "outputs_dir": ...} — directories, not the
     # old per-file INPUTS/OUTPUTS name→path maps.
     manifest = json.loads(os.environ["TRAP_MANIFEST"])
     question = (Path(manifest["inputs_dir"]) / "question.txt").read_text()
 
-    is_anthropic = MODEL.startswith("claude-")
-    answer, usage = (call_anthropic if is_anthropic else call_openrouter)(question)
+    call = call_anthropic if args.provider == "anthropic" else call_openrouter
+    answer, usage = call(args.model, question)
     print(answer)
 
-    # The judge reads this for the model name, and — for OpenRouter models, which trap's
-    # cost proxy does not intercept — it is the only cost figure the run will ever have.
+    # The judge reads this for the model name, the persona label, and — for OpenRouter
+    # models, which trap's cost proxy does not intercept — the only cost figure the run
+    # will ever have.
     outputs_dir = Path(manifest["outputs_dir"])
     outputs_dir.mkdir(parents=True, exist_ok=True)
     (outputs_dir / "usage.json").write_text(json.dumps({
-        "model": MODEL,
+        "model": args.model,
         "persona": PERSONA,
         **usage,
-        "usd_cost": estimate_cost_usd(usage, MODEL),
+        "usd_cost": estimate_cost_usd(usage, args.model),
     }, indent=2))
 
     return 0

@@ -1,0 +1,15 @@
+# The model is a literal argument here and nowhere else, so what runs and what
+# gets reported cannot drift apart. PERSONA stays an env var — it is the
+# condition varied across runs of this identity, not the identity itself.
+name: mbti-multi-model-deepseek-v4-pro
+cmd: uv run ../solution.py --provider openrouter --model deepseek/deepseek-v4-pro-0813
+profile:
+  model: deepseek/deepseek-v4-pro-0813
+  framework: openrouter
+timeout: 600 # heavy reasoning models can take well over a minute
+
+tasks:
+  # Must stay equal to the commit registered on trapstreet — submit matches
+  # {repo, commit, subdirectory} exactly and 404s on any mismatch.
+  do-llms-dream-of-intj:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@cf92b6690b7c8b3430602dd3b72a8528c96e636b#subdirectory=tasks/personality/mbti_profile

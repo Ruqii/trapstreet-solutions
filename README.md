@@ -25,8 +25,12 @@ trapstreet-solutions/
     mohitagw/                           # mohitagw15856/pm-claude-skills
     cgallic/                            # cgallic/kai-cmo-harness
   mbti_profile/                         # solutions for the do-llms-dream-of-intj task
-    mbti-multi-model/                   # one solution; MODEL and PERSONA pick the cell
+    mbti-multi-model/                   # shared solution.py; PERSONA picks the condition
       personas/                         # the .md files a run can carry
+      claude-opus-5/trap.yaml
+      deepseek-v4-pro/trap.yaml
+      glm-5.2/trap.yaml
+      gpt-5.6-sol-pro/trap.yaml
   pdf_reader/                           # solutions for the pdf-reader-v2 task
     claude-pdf/                         # direct vision-LLM, no parser          [migrated]
     smolagents-split/                   # opus vision / sonnet planner          [migrated]
@@ -35,14 +39,20 @@ trapstreet-solutions/
     marker/                             # Marker parser → Claude               [ABANDONED]
 ```
 
-### `mbti_profile/` — one solution, two env vars
+### `mbti_profile/` — a variant dir per model, a persona per run
 
-`MODEL` picks the model. `PERSONA` names a file in `mbti-multi-model/personas/` whose
-text is prepended to the system prompt — the slot a `CLAUDE.md` or `soul.md` occupies in
-a real agent harness. `PERSONA=bare` prepends nothing and is the control.
+The model is a literal `cmd:` argument in each `<model>/trap.yaml`, so what runs and what
+`profile.model` reports are the same string in one file. `PERSONA` stays an env var: it is
+the condition varied *across* runs of one model, not part of the model's identity, and
+baking it in would mean a directory per (model, persona) cell.
+
+`PERSONA` names a file in `mbti-multi-model/personas/` whose text is prepended to the
+system prompt — the slot a `CLAUDE.md` or `soul.md` occupies in a real agent harness.
+`PERSONA=bare` prepends nothing and is the control.
 
 ```bash
-MODEL=claude-opus-5 PERSONA=warm tp run . --task do-llms-dream-of-intj --trust-remote
+cd mbti_profile/mbti-multi-model/glm-5.2
+PERSONA=soul-sentinel tp run . --task do-llms-dream-of-intj --trust-remote
 ```
 
 `PERSONA` also travels to the board inside `usage.json`, and the task page keys its cards
