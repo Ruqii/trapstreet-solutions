@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -69,7 +70,12 @@ def build_system() -> str:
         raise SystemExit(
             f"PERSONA={PERSONA!r} not found at {path}. Available: {available or '(none)'} (or 'bare')"
         )
-    return f"{path.read_text().strip()}\n\n---\n\n{TASK_SYSTEM}"
+    # HTML comments carry provenance for us (source repo, licence, why the file
+    # is here) and must not reach the model — a vendored file's header explains
+    # the experiment, and telling the subject it is being measured is exactly
+    # the contamination this condition exists to avoid.
+    body = re.sub(r"<!--.*?-->", "", path.read_text(), flags=re.DOTALL).strip()
+    return f"{body}\n\n---\n\n{TASK_SYSTEM}"
 
 
 SYSTEM = build_system()
