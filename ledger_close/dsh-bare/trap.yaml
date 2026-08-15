@@ -1,0 +1,12 @@
+name: dsh-bare
+cmd: bash run.sh
+profile:
+  model: deepseek-v4-flash
+  framework: deepseek-harness
+  notes: >-
+    Stock DeepSeek Harness, zero plugins, default profile. This is the
+    baseline the task was calibrated against, not an attempt to score well.
+timeout: 1800
+tasks:
+  ledger-close:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@2c85363401668471eb9d9a52247c60bcf6580f35#subdirectory=tasks/ledger_close
