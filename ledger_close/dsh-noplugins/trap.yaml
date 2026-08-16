@@ -1,4 +1,4 @@
-name: dsh-bare
+name: dsh-noplugins
 cmd: bash run.sh
 profile:
   model: deepseek-v4-flash
@@ -9,4 +9,4 @@ profile:
 timeout: 1800
 tasks:
   ledger-close:
-    source: git+https://github.com/trapstreet/trapstreet-tasks@2c85363401668471eb9d9a52247c60bcf6580f35#subdirectory=tasks/ledger_close
+    source: git+https://github.com/trapstreet/trapstreet-tasks@400e9831ab83efbe85af94b9c5a018b1f5db246d#subdirectory=tasks/ledger_close
