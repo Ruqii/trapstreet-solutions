@@ -9,4 +9,4 @@ profile:
 timeout: 1800
 tasks:
   ledger-close:
-    source: git+https://github.com/trapstreet/trapstreet-tasks@400e9831ab83efbe85af94b9c5a018b1f5db246d#subdirectory=tasks/ledger_close
+    source: git+https://github.com/trapstreet/trapstreet-tasks@028aa49eca6f296c3048948c16dc7d0483426523#subdirectory=tasks/ledger_close
