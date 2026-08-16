@@ -1,0 +1,14 @@
+name: dsh-workflow
+cmd: bash run.sh
+profile:
+  model: deepseek-v4-flash
+  framework: deepseek-harness
+  plugins: "@dsh-external/workflow (icetomoyo/dsh_workflow)"
+  notes: >-
+    Stock DeepSeek Harness plus one plugin: dsh_workflow, which adds a
+    governable multi-step workflow mode. Everything else is identical to
+    dsh-noplugins, so the difference between the two entries is the plugin.
+timeout: 1800
+tasks:
+  ledger-close:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@028aa49eca6f296c3048948c16dc7d0483426523#subdirectory=tasks/ledger_close
