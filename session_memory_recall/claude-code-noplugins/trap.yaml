@@ -3,7 +3,7 @@
 #
 # Wired exactly as the task README tells entrants to wire it -- pinned git
 # source plus clone_to, so the run also exercises the documented recipe.
-name: session-memory-recall-claude-code-stock
+name: claude-code-noplugins
 cmd: bash task/tasks/session_memory_recall/tools/run_case.sh claude -p --model sonnet
 profile:
   model: claude-sonnet-5

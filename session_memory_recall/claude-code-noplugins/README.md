@@ -1,4 +1,4 @@
-# session-memory-recall — stock Claude Code, no memory plugin
+# claude-code-noplugins — the no-capability arm
 
 The no-capability baseline for
 [session-memory-recall](https://trapstreet.run/tasks/session-memory-recall).
