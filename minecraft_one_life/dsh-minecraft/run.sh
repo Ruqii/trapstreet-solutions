@@ -12,7 +12,11 @@ say() { echo "[run] $*" >&2; }
 : "${DEEPSEEK_API_KEY:?run.sh needs DEEPSEEK_API_KEY}"
 MC_HOST="${MC_HOST:-127.0.0.1}"
 MC_PORT="${MC_PORT:-25565}"
-PLUGIN_VERSION="${PLUGIN_VERSION:-0.9.1}"
+# Pinned to a commit rather than an npm version. One-life support landed in
+# 0.12.0, which is not on npm yet -- and a commit is stronger provenance than a
+# version tag anyway, since a tag can be republished and a commit cannot. Switch
+# to dsh-minecraft@0.12.0 once it is published if you prefer.
+PLUGIN_SPEC="${PLUGIN_SPEC:-github:Ruqii/dsh-minecraft#a4e0de985373ef2f66e4aa10e88a8817de1e8548}"
 DSH_PKG="${DSH_PKG:-@deepseek-ai/dsh@0.1.0-rc.6}"
 
 WORK="$(mktemp -d)"
@@ -30,9 +34,9 @@ if ! nc -z "$MC_HOST" "$MC_PORT" 2>/dev/null; then
   exit 1
 fi
 
-say "installing dsh-minecraft@$PLUGIN_VERSION"
+say "installing $PLUGIN_SPEC"
 npx -y "$DSH_PKG" --profile headless --dump-config >/dev/null 2>&1
-npx -y "$DSH_PKG" plugin --profile headless add "dsh-minecraft@$PLUGIN_VERSION" >/dev/null 2>&1
+npx -y "$DSH_PKG" plugin --profile headless add "$PLUGIN_SPEC" >/dev/null 2>&1
 
 # A DSH profile installs plugin dependencies without running install scripts, so
 # the native canvas binary is missing and recording declines silently. 0.11.0+
