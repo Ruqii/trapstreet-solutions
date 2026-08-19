@@ -1,0 +1,15 @@
+# Baseline: a stock harness with no memory plugin of any kind.
+# The board's premise says this scores 0. This run is the check.
+#
+# Wired exactly as the task README tells entrants to wire it -- pinned git
+# source plus clone_to, so the run also exercises the documented recipe.
+name: session-memory-recall-claude-code-stock
+cmd: bash task/tasks/session_memory_recall/tools/run_case.sh claude -p --model sonnet
+profile:
+  model: claude-sonnet-5
+  framework: claude-code
+timeout: 900
+tasks:
+  session-memory-recall:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@006c72b1b464f495f3fc9f6e29180527f6c3738b#subdirectory=tasks/session_memory_recall
+    clone_to: task
