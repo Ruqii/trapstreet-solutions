@@ -10,5 +10,7 @@ profile:
     recorded when it happens rather than remembered afterwards.
 timeout: 2400
 tasks:
-  one_life:
+  # The key is the trapstreet task_id that tp submit posts to, not the case
+  # id inside the task. `one_life` is the case; `minecraft-one-life` is the board.
+  minecraft-one-life:
     source: git+https://github.com/trapstreet/trapstreet-tasks.git@c4e9a348f1eb20bfda50e00ddd7fadcb86315bed#subdirectory=tasks/minecraft_one_life
