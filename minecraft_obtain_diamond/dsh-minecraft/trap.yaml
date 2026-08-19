@@ -1,0 +1,14 @@
+name: dsh-minecraft-diamond
+cmd: bash run.sh
+profile:
+  model: deepseek-v4-flash
+  framework: deepseek-harness
+  notes: >-
+    DeepSeek Harness driving a Mineflayer bot through the dsh-minecraft plugin,
+    pinned. No planning code here: the plugin exposes game actions and nothing
+    above them, so the recipe chain is the agent's to work out.
+# The task caps the game at 30 minutes; leave room for install and the mux.
+timeout: 2400
+tasks:
+  minecraft-obtain-diamond:
+    source: https://github.com/Ruqii/minecraft-obtain-diamond@7e508240866e5650540afef1e4efb9b4fdd198da

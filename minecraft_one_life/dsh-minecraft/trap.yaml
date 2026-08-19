@@ -1,0 +1,14 @@
+name: dsh-minecraft-one-life
+cmd: bash run.sh
+profile:
+  model: deepseek-v4-flash
+  framework: deepseek-harness
+  notes: >-
+    Same agent as the obtain-diamond arm, with MC_ONE_LIFE=1 so the plugin
+    enforces the rule instead of leaving it to the entrant: after the first
+    death every action tool refuses, and deaths / milestones_at_death are
+    recorded when it happens rather than remembered afterwards.
+timeout: 2400
+tasks:
+  one_life:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@c4e9a348f1eb20bfda50e00ddd7fadcb86315bed#subdirectory=tasks/minecraft_one_life
