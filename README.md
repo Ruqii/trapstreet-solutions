@@ -19,6 +19,11 @@ trapstreet-solutions/
     jeffallan/                          # Jeffallan/claude-skills, multi-model
     awesome/                            # community "awesome" code-review skill
     alireza/                            # alirezarezvani/claude-skills
+  skill-distill/                        # same task: a skill Opus writes once, Haiku runs every case
+    solution.py                         # runtime path; loads skill.txt, one cheap call
+    craft_skill.py                      # one-time authoring step, never runs during scoring
+    skill.txt                           # the generated skill, checked in like compiled output
+    claude-haiku-4-5/trap.yaml
   influencer_marketing_disclosure/      # solutions for tasks/influencer_marketing_disclosure
     coreyhaines/                        # coreyhaines31/marketingskills
     nexscope/                           # nexscope-ai/eCommerce-Skills
