@@ -77,6 +77,10 @@ extraction may contain minor errors.
 - For calculation questions, give the final figure and show the arithmetic.
 """
 
+# The prompt above names the document this file was written for. A task shipping
+# a different document passes its own with --system; omitting it changes nothing,
+# so runs already published against the tenancy tasks stay reproducible.
+
 
 def convert_vanilla(pdf: Path) -> str:
     """The library's headline API, used as its README shows it."""
@@ -179,12 +183,18 @@ def ask(system: str, user: str) -> tuple[str, dict]:
 def main() -> int:
     global MODEL
     ap = argparse.ArgumentParser()
+    ap.add_argument("--system", default=None,
+                    help="override the system prompt; default is the tenancy wording "
+                         "this file shipped with")
     ap.add_argument("--model", required=True,
                     help="full model id; must match profile.model in trap.yaml")
     ap.add_argument("--mode", required=True, choices=sorted(MODES),
                     help="which extraction path to measure; see module docstring")
     args = ap.parse_args()
     MODEL = args.model
+    global SYSTEM
+    if args.system:
+        SYSTEM = args.system
 
     manifest = json.loads(os.environ["TRAP_MANIFEST"])
     inputs_dir = Path(manifest["inputs_dir"])
