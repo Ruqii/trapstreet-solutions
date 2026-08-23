@@ -1,0 +1,16 @@
+name: mineru
+# Second OCR pipeline, for whether the two differ on charts. Slow on CPU, and
+# the cache in /tmp/trapstreet-mineru-cache must be COLD when `tp run` starts
+# or the parse happens outside the measured window.
+#
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported and would drift from a MODEL env var silently.
+cmd: uv run python ../../pdf_reader/mineru/solution.py --model claude-sonnet-5
+profile:
+  model: claude-sonnet-5
+  framework: mineru
+timeout: 3600
+tasks:
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
+  pdf-chart-reading:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@8b198fb865f2315d80c9d5d7c85d69ba0b800994#subdirectory=tasks/pdf_chart_reading

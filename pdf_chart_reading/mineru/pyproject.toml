@@ -1,0 +1,13 @@
+[project]
+name = "pdf-mixed-scan-mineru"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "openai>=1.0.0",        # used for OpenRouter (OpenAI-compatible) models
+]
+
+# NOTE: MinerU is NOT a project dependency — it's a global CLI tool because its
+# PyTorch + model stack is multi-GB and shared across solutions. Install once with:
+#   uv tool install "mineru[core]"
+# The solution shells out to the `mineru` command on a cache miss only.
