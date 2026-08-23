@@ -1,0 +1,16 @@
+name: dsh-subagent
+cmd: bash run.sh
+profile:
+  model: deepseek-v4-flash
+  framework: deepseek-harness
+  plugins: "dsh-subagent-profile (npm)"
+  notes: >-
+    Stock DeepSeek Harness plus one plugin: dsh-subagent-profile, which adds a
+    `dispatch` tool for sending subtasks to child agents with a per-subtask
+    preset, model, reasoning effort and tool scope. Everything else is
+    identical to dsh-noplugins, so the difference between the two entries is
+    the plugin.
+timeout: 1800
+tasks:
+  ledger-close:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@028aa49eca6f296c3048948c16dc7d0483426523#subdirectory=tasks/ledger_close
