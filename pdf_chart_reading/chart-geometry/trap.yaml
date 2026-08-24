@@ -1,0 +1,20 @@
+name: chart-geometry
+# Measures the figures instead of looking at them: bar heights against the
+# printed axis, markers counted by connected components. The model still reads
+# the question and decides what the measurements mean.
+#
+# Developed and validated against the SEP released after the March 2026 FOMC
+# meeting -- a different document from the one this task ships, and never
+# against this task's answers.
+#
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported and would drift from a MODEL env var silently.
+cmd: uv run python solution.py --model claude-sonnet-5
+profile:
+  model: claude-sonnet-5
+  framework: opencv-geometry
+timeout: 3600
+tasks:
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
+  pdf-chart-reading:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@8b42ce060c5790ea3065f721443f22c93a315b86#subdirectory=tasks/pdf_chart_reading
