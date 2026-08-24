@@ -1,0 +1,21 @@
+name: pdf-inspector-routed-opus
+# Identical to pdf-inspector-routed in every respect except the model: same
+# 150 dpi render, same pages routed, same 4096-token ceiling. The pair asks
+# whether a stronger model reads a bar height better, or whether the ceiling
+# belongs to how the pixels are presented rather than to who looks at them.
+#
+# Same library, plus the routing step it exists to enable: flagged pages are
+# rasterised at 150 dpi and sent to the vision model. Whole pages, not crops —
+# which is the variable this task turns out to be most sensitive to.
+#
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported and would drift from a MODEL env var silently.
+cmd: uv run python solution.py --model claude-opus-5
+profile:
+  model: claude-opus-5
+  framework: pdf-inspector
+timeout: 900
+tasks:
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
+  pdf-chart-reading:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@8b42ce060c5790ea3065f721443f22c93a315b86#subdirectory=tasks/pdf_chart_reading
