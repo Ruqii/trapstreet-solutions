@@ -87,7 +87,14 @@ def billed_cost_usd(usage, model: str) -> float:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, help="Anthropic model id; must match profile.model in trap.yaml")
+    # The prompt below names the document this file was written for. A task
+    # shipping a different one passes its own; omitting the flag changes
+    # nothing, so the tenancy runs already published stay reproducible.
+    ap.add_argument("--system", default=None, help="override the system prompt")
     args = ap.parse_args()
+    global SYSTEM
+    if args.system:
+        SYSTEM = args.system
 
     manifest = json.loads(os.environ["TRAP_MANIFEST"])
     inputs_dir = Path(manifest["inputs_dir"])
