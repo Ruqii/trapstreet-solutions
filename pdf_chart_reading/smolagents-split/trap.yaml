@@ -1,24 +1,24 @@
-name: smolagents-split
 # The only arm here that can choose its own method. A CodeAgent with a vision
 # tool and a Python interpreter, planning on Sonnet 5 and looking with Opus 5 --
 # the split is motivated by this task's own result, where the same pipeline
 # reading bar heights scored 0.9 on Opus against 0.5-0.7 on Sonnet.
 #
 # The interpreter is given the document-analysis modules anyone doing this work
-# in Python would have, and told where the file is. That is deliberate and it
-# is the experiment: every other arm has its method chosen for it by whoever
-# wrote it, and this one is being asked whether an agent finds a method at all.
-# Handing it the modules is not handing it the answer -- nothing here mentions
+# in Python would have, and told where the file is. That is the experiment:
+# every other arm has its method chosen by whoever wrote it, and this one is
+# asked whether an agent finds a method at all. Nothing in its brief mentions
 # bars, gridlines or measurement.
 #
 # 12 steps rather than the file's default 6: a method it has to discover needs
 # room to be discovered.
-cmd: uv run python ../../pdf_reader/smolagents-split/solution.py --planner-model claude-sonnet-5 --tool-model claude-opus-5 --max-steps 12 --allow-imports "pymupdf,PIL,PIL.Image,numpy,math,statistics,json,re,collections,itertools" --tool-system "You look at a document and report what a figure shows. Answer exactly what is there. One short sentence; just the value if a value is asked for." --agent-prompt "You answer one question about a document whose figures are pictures: the pages carrying them have no text layer and no vector paths, so no parser can read a value out of them.\n\nYou have:\n  - read_pdf(question): ask a focused question, a vision model looks at the document\n  - Python: compute, and whatever else you can do with the modules listed below\n\nRules:\n- Answer ONLY from the document.\n- Do not hedge if the document contains the answer; if it genuinely cannot, say so and say why.\n- Your final answer must end with a line of the form `ANSWER: <value>`, exactly as the question asks. This is graded.\n\nQUESTION: {question}"
+name: smolagents-split
+cmd: "uv run python ../../pdf_reader/smolagents-split/solution.py --planner-model claude-sonnet-5 --tool-model claude-opus-5 --max-steps 12 --allow-imports \"pymupdf,PIL,PIL.Image,numpy,math,statistics,json,re,collections,itertools\" --tool-system \"You look at a document and report what a figure shows. Answer exactly what is there. One short sentence; just the value if a value is asked for.\" --agent-prompt \"You answer one question about a document whose figures are pictures: the pages carrying them have no text layer and no vector paths, so no parser can read a value out of them.\n\nYou have:\n  - read_pdf(question): ask a focused question, a vision model looks at the document\n  - Python: compute, and whatever else you can do with the modules listed below\n\nRules:\n- Answer ONLY from the document.\n- Do not hedge if the document contains the answer; if it genuinely cannot, say so and say why.\n- Your final answer must end with a line of the form `ANSWER: <value>`, exactly as the question asks. This is graded.\n\nQUESTION: {question}\""
 profile:
-  model: claude-sonnet-5 + claude-opus-5
+  model:
+  - claude-sonnet-5
+  - claude-opus-5
   framework: smolagents
 timeout: 3600
 tasks:
-  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
   pdf-chart-reading:
     source: git+https://github.com/trapstreet/trapstreet-tasks.git@8b42ce060c5790ea3065f721443f22c93a315b86#subdirectory=tasks/pdf_chart_reading
