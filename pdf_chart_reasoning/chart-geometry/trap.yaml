@@ -1,0 +1,18 @@
+name: chart-geometry
+# Moved across from pdf-chart-reading unchanged, which is the point. It tops
+# that board at 0.864 by measuring bar heights and counting markers; this task
+# asks for seven things and only three of them are that. Nothing here was
+# adapted -- no line sampling, no reading of the footnotes -- so the score is
+# what a geometry script written for the previous question set is worth on this
+# one, rather than what the approach could reach if someone extended it.
+#
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported and would drift from a MODEL env var silently.
+cmd: uv run python solution.py --model claude-sonnet-5
+profile:
+  model: claude-sonnet-5
+  framework: opencv-geometry
+timeout: 3600
+tasks:
+  pdf-chart-reasoning:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0461051ab3e6636916fcfac1f8c4c8042efc5139#subdirectory=tasks/pdf_chart_reasoning
