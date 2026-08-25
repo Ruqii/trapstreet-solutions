@@ -1,0 +1,16 @@
+name: pdf-inspector-routed-opus
+# The strongest arm on the predecessor board (0.727), run here as a check on
+# the task rather than as a ranking: the defect worth finding is a judge that
+# rejects a CORRECT answer, and finding those needs a pipeline that produces
+# plenty of them.
+#
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported and would drift from a MODEL env var silently.
+cmd: uv run python solution.py --model claude-opus-5
+profile:
+  model: claude-opus-5
+  framework: pdf-inspector
+timeout: 3600
+tasks:
+  pdf-chart-reasoning:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0461051ab3e6636916fcfac1f8c4c8042efc5139#subdirectory=tasks/pdf_chart_reasoning
