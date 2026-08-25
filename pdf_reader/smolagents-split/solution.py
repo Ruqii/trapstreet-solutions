@@ -160,6 +160,9 @@ def main() -> int:
                     help="replace the vision tool's system prompt")
     ap.add_argument("--allow-imports", default="",
                     help="comma-separated modules the agent's Python may import")
+    ap.add_argument("--answer-contract", default=None,
+                    help="sentinel a task grades on (e.g. ANSWER); emitted if the "
+                         "agent's returned value does not already carry it")
     args = ap.parse_args()
     PLANNER_MODEL, TOOL_MODEL, MAX_STEPS = args.planner_model, args.tool_model, args.max_steps
 
@@ -203,7 +206,18 @@ def main() -> int:
             brief += (f"\n\nThe document is on disk at: {inputs_dir / 'document.pdf'}\n"
                       f"Your Python may import: {', '.join(allowed)}")
         answer = agent.run(brief)
-    print(str(answer).strip())
+    # smolagents' final_answer is a VALUE channel, not a text one: asked for a
+    # count, the model calls final_answer("6") and that is all that reaches
+    # stdout. A task grading on a sentinel line therefore scores this arm zero
+    # on answers that were right -- nine of them in the first run against
+    # pdf-chart-reading. Meeting a task's output contract is the adapter's job,
+    # so the adapter meets it. Nothing here changes what the agent concluded.
+    text = str(answer).strip()
+    print(text)
+    contract = args.answer_contract
+    if contract and f"{contract.upper()}:" not in text.upper():
+        last = next((l for l in reversed(text.splitlines()) if l.strip()), text)
+        print(f"{contract}: {last.strip()}")
 
     monitor = getattr(agent, "monitor", None)
     agent_in_tokens = int(getattr(monitor, "total_input_token_count", 0) or 0)
