@@ -14,9 +14,10 @@
 name: smolagents-split
 cmd: "uv run python ../../pdf_reader/smolagents-split/solution.py --planner-model claude-sonnet-5 --tool-model claude-opus-5 --max-steps 12 --allow-imports \"pymupdf,PIL,PIL.Image,numpy,math,statistics,json,re,collections,itertools\" --tool-system \"You look at a document and report what a figure shows. Answer exactly what is there. One short sentence; just the value if a value is asked for.\" --agent-prompt \"You answer one question about a document whose figures are pictures: the pages carrying them have no text layer and no vector paths, so no parser can read a value out of them.\n\nYou have:\n  - read_pdf(question): ask a focused question, a vision model looks at the document\n  - Python: compute, and whatever else you can do with the modules listed below\n\nRules:\n- Answer ONLY from the document.\n- Do not hedge if the document contains the answer; if it genuinely cannot, say so and say why.\n- Your final answer must end with a line of the form `ANSWER: <value>`, exactly as the question asks. This is graded.\n\nQUESTION: {question}\""
 profile:
-  model:
-  - claude-sonnet-5
-  - claude-opus-5
+  # Both models are literal CLI arguments, never env vars — profile.model is
+  # self-reported and would drift silently, putting the wrong engine in the
+  # leaderboard's ENGINE column. Listed in the order the cmd passes them.
+  model: [claude-sonnet-5, claude-opus-5]
   framework: smolagents
 timeout: 3600
 tasks:
