@@ -34,6 +34,12 @@ from smolagents import CodeAgent, LiteLLMModel, tool
 # extraction worker. Both are set from CLI arguments in main(), never from
 # env vars — trap.yaml's profile.model is self-reported, and an env var
 # drifts from it silently, putting the wrong engine on the leaderboard.
+TOOL_SYSTEM = (
+    "You extract literal facts from a UK Assured Shorthold Tenancy agreement. "
+    "Answer exactly what's in the document. One short sentence; just the value "
+    "if a value is asked for."
+)
+
 # Module-level so the @tool function below can close over TOOL_MODEL.
 PLANNER_MODEL = ""
 TOOL_MODEL = ""
@@ -43,6 +49,8 @@ MAX_STEPS = 6
 # previously carried $15/$75, which overstated every opus run ~3x.
 # cache_write = 1.25x input (5m TTL), cache_read = 0.1x input.
 PRICES: dict[str, dict[str, float]] = {
+    "claude-opus-5":      {"in":  5.00, "out": 25.00, "cache_read": 0.50,  "cache_write":  6.25},
+    "claude-sonnet-5":    {"in":  3.00, "out": 15.00, "cache_read": 0.30,  "cache_write":  3.75},
     "claude-opus-4-7":    {"in":  5.00, "out": 25.00, "cache_read": 0.50,  "cache_write":  6.25},
     "claude-sonnet-4-6":  {"in":  3.00, "out": 15.00, "cache_read": 0.30,  "cache_write":  3.75},
     "claude-sonnet-4-5-20250929": {"in": 3.00, "out": 15.00, "cache_read": 0.30, "cache_write": 3.75},
@@ -75,9 +83,7 @@ def read_pdf(question: str) -> str:
         model=TOOL_MODEL,
         max_tokens=1024,
         system=(
-            "You extract literal facts from a UK Assured Shorthold Tenancy agreement. "
-            "Answer exactly what's in the document. One short sentence; just the value "
-            "if a value is asked for."
+            TOOL_SYSTEM
         ),
         messages=[{
             "role": "user",
@@ -145,8 +151,30 @@ def main() -> int:
     ap.add_argument("--planner-model", required=True, help="agent's reasoning model")
     ap.add_argument("--tool-model", required=True, help="vision model behind read_pdf")
     ap.add_argument("--max-steps", type=int, default=6)
+    # The three below let a task that ships a different document replace every
+    # piece of wording the agent reads, and widen what its interpreter may
+    # import. Omitting them changes nothing.
+    ap.add_argument("--agent-prompt", default=None,
+                    help="replace the agent's brief; {question} is substituted")
+    ap.add_argument("--tool-system", default=None,
+                    help="replace the vision tool's system prompt")
+    ap.add_argument("--allow-imports", default="",
+                    help="comma-separated modules the agent's Python may import")
     args = ap.parse_args()
     PLANNER_MODEL, TOOL_MODEL, MAX_STEPS = args.planner_model, args.tool_model, args.max_steps
+
+    global AGENT_PROMPT, TOOL_SYSTEM
+    if args.tool_system:
+        TOOL_SYSTEM = args.tool_system
+    if args.agent_prompt:
+        AGENT_PROMPT = args.agent_prompt
+        # The tool's docstring is what the agent is told the tool does, so it
+        # has to move with the brief or the agent is briefed on two documents.
+        read_pdf.description = (
+            "Ask a focused question about the document and get a short answer back. "
+            "The document is sent to a vision model, so this is the only way to see "
+            "anything that is drawn rather than written."
+        )
 
     manifest = json.loads(os.environ["TRAP_MANIFEST"])
     inputs_dir = Path(manifest["inputs_dir"])
@@ -157,10 +185,12 @@ def main() -> int:
 
     # Planner runs through LiteLLM; vision tool calls Anthropic directly (above).
     planner = LiteLLMModel(model_id=f"anthropic/{PLANNER_MODEL}")
+    allowed = [m.strip() for m in args.allow_imports.split(",") if m.strip()]
     agent = CodeAgent(
         tools=[read_pdf],
         model=planner,
         max_steps=MAX_STEPS,
+        additional_authorized_imports=allowed,
     )
 
     # See smolagents-claude/solution.py for why we redirect: smolagents prints
@@ -168,7 +198,11 @@ def main() -> int:
     # which `trap` reads as the agent's answer. Send the trace to stderr;
     # only the final answer goes to stdout.
     with redirect_stdout(sys.stderr):
-        answer = agent.run(AGENT_PROMPT.format(question=question))
+        brief = AGENT_PROMPT.format(question=question)
+        if allowed:
+            brief += (f"\n\nThe document is on disk at: {inputs_dir / 'document.pdf'}\n"
+                      f"Your Python may import: {', '.join(allowed)}")
+        answer = agent.run(brief)
     print(str(answer).strip())
 
     monitor = getattr(agent, "monitor", None)
