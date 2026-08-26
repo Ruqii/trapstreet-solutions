@@ -1,0 +1,37 @@
+name: pdf-inspector-routed
+# The cell the board was missing. claude-pdf hands the whole PDF to Sonnet 5 in
+# one shot and scores 0.304; smolagents-split reaches the figures through the
+# same native-PDF channel but asks about them repeatedly, and scores 0.739.
+# Nothing on the board separated "better pixels" from "more looks".
+#
+# This arm holds the model and the single shot fixed against claude-pdf and
+# changes how the figures arrive: the thirteen image pages are rasterised at
+# 150 dpi and sent as page images. pdf-inspector's routing is exact here --
+# it flags pages 3-15 and nothing else -- so the extraction step is not what
+# limits the result.
+#
+# It is NOT a clean one-variable contrast, and the difference should not be
+# read as the value of rendering alone. claude-pdf and pdf-inspector both run
+# with a replaced --system telling them to commit rather than hedge and to
+# answer every part; this arm keeps the bare prompt compiled into solution.py.
+# Two things differ from claude-pdf, not one. The bare prompt is deliberate --
+# it is what produced 0.591 on the pdf-chart-reading board, and replacing it
+# would have made the cross-board number mean something different -- but a
+# low score here could be the prompt rather than the pixels. Answering that
+# needs a prompt-matched arm, which is a separate run.
+#
+# Dependency versions match the pdf-chart-reading copy exactly (pdf-inspector
+# 1.14.1, anthropic 0.121.0, pymupdf 1.28.2); only the project name in
+# pyproject.toml differs, so the lock hashes do not match byte for byte.
+#
+# Model is a literal CLI argument, never an env var — profile.model below is
+# self-reported and would drift from a MODEL env var silently.
+cmd: uv run python solution.py --model claude-sonnet-5
+profile:
+  model: claude-sonnet-5
+  framework: pdf-inspector
+timeout: 900
+tasks:
+  # Alias must equal the trapstreet task_id — it is what `tp submit` submits to.
+  pdf-chart-reasoning:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0461051ab3e6636916fcfac1f8c4c8042efc5139#subdirectory=tasks/pdf_chart_reasoning
