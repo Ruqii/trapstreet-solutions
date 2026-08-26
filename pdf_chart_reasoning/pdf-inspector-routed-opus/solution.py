@@ -3,8 +3,8 @@
 The library's headline claim is that it tells you which pages need OCR so you
 can skip the expensive path for the ones that do not. The plain
 `pdf-inspector` solution in this repo never acts on that — it takes
-`process_pdf().markdown` and stops, which on a document whose second half is
-images means it answers from half a document and scores 0.35.
+`process_pdf().markdown` and stops, which on a document whose figures are all
+images means it answers from the four text pages alone and scores 0.130.
 
 This one uses the same library and adds the routing step:
 
@@ -17,9 +17,10 @@ So the comparison between this solution and the plain one is not two libraries.
 It is the same library with and without the thing it was built to enable.
 
 Measured on this document, the classification is exact: pages_needing_ocr
-returns [6,7,8,9,10,11], which is precisely the image half — no false
-positives, no misses. Whatever this scores, the routing signal was not the
-limiting factor.
+returns [3..15], which is precisely the thirteen figure pages — no false
+positives, no misses, and the four text pages come through as 13k characters
+of markdown. Whatever this scores, the routing signal was not the limiting
+factor.
 
 Note what the library does NOT provide: a renderer or an OCR engine. Acting on
 its verdict means supplying your own fallback path. Here that is PyMuPDF for
