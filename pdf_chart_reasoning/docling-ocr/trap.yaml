@@ -1,0 +1,24 @@
+name: docling-ocr
+# The OCR row. On the predecessor board this scored 0.000, but every case there
+# asked for a value that exists only as chart geometry, so that number says
+# little about OCR as such. This board has seven cases answerable from the text
+# pages, which makes the arm worth a real entry rather than an assumed one.
+#
+# Rasterising the figure pages destroyed 18,159 characters of text that had been
+# printed inside them -- axis ticks, panel headings, legends, in-figure notes.
+# OCR is the only pipeline here that can read any of it back. Checked before
+# running: no case's wording depends on text that lives only in that lost layer,
+# so the expectation is a result near pdf-inspector's 0.130, and the point of
+# the run is to establish that rather than assume it.
+#
+# Same shared implementation and the same --system as the predecessor board, so
+# the two numbers are comparable.
+cmd: uv run python ../../pdf_reader/docling/solution.py --mode ocr --model claude-sonnet-5 --system "You answer questions about a document. You are given it as text produced by an OCR pipeline reading the rendered pages. Answer only from the document. Commit to an answer rather than hedging when the document contains it. Follow any format the question asks for, and answer every part of a multi-part question."
+profile:
+  model: claude-sonnet-5
+  framework: docling
+timeout: 3600
+tasks:
+  # Alias must equal the trapstreet task_id -- it is what `tp submit` submits to.
+  pdf-chart-reasoning:
+    source: git+https://github.com/trapstreet/trapstreet-tasks.git@0461051ab3e6636916fcfac1f8c4c8042efc5139#subdirectory=tasks/pdf_chart_reasoning
