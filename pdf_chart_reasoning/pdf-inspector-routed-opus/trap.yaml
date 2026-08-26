@@ -6,7 +6,7 @@ name: pdf-inspector-routed-opus
 #
 # Model is a literal CLI argument, never an env var — profile.model below is
 # self-reported and would drift from a MODEL env var silently.
-cmd: uv run python solution.py --model claude-opus-5
+cmd: uv run python ../../pdf_reader/pdf-inspector-routed/solution.py --model claude-opus-5
 profile:
   model: claude-opus-5
   framework: pdf-inspector
