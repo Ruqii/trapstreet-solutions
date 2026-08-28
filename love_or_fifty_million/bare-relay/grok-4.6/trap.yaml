@@ -1,0 +1,9 @@
+name: bare-relay-grok-4.6
+cmd: uv run ../solution.py --provider openrouter --model x-ai/grok-4.6
+profile:
+  model: x-ai/grok-4.6
+  framework: openrouter-api
+timeout: 300
+tasks:
+  love-or-fifty-million:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@c140d90a53a8af9c7f36a1dc1f844c8f8e915c8f#subdirectory=tasks/love_or_fifty_million

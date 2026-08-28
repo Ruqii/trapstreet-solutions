@@ -1,0 +1,13 @@
+# The model is a literal argument here and nowhere else, so what runs and what
+# the board reports cannot drift apart.
+name: bare-relay-qwen3.8-max
+cmd: uv run ../solution.py --provider openrouter --model qwen/qwen3.8-max
+profile:
+  model: qwen/qwen3.8-max
+  framework: openrouter
+timeout: 300
+tasks:
+  # Must stay equal to the commit registered on trapstreet — submit matches
+  # {repo, commit, subdirectory} exactly and 404s on any mismatch.
+  love-or-fifty-million:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@c140d90a53a8af9c7f36a1dc1f844c8f8e915c8f#subdirectory=tasks/love_or_fifty_million

@@ -1,0 +1,13 @@
+# The model is a literal argument here and nowhere else, so what runs and what
+# the board reports cannot drift apart.
+name: bare-relay-deepseek-v4-pro
+cmd: uv run ../solution.py --provider deepseek --model deepseek-v4-pro
+profile:
+  model: deepseek-v4-pro
+  framework: deepseek
+timeout: 300
+tasks:
+  # Must stay equal to the commit registered on trapstreet — submit matches
+  # {repo, commit, subdirectory} exactly and 404s on any mismatch.
+  love-or-fifty-million:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@c140d90a53a8af9c7f36a1dc1f844c8f8e915c8f#subdirectory=tasks/love_or_fifty_million

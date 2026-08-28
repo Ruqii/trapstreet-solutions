@@ -1,0 +1,9 @@
+name: bare-relay-claude-opus-5
+cmd: uv run ../solution.py --provider anthropic --model claude-opus-5
+profile:
+  model: claude-opus-5
+  framework: anthropic-api
+timeout: 300
+tasks:
+  love-or-fifty-million:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@c140d90a53a8af9c7f36a1dc1f844c8f8e915c8f#subdirectory=tasks/love_or_fifty_million

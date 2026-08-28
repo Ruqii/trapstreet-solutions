@@ -1,0 +1,13 @@
+# The model is a literal argument here and nowhere else, so what runs and what
+# the board reports cannot drift apart.
+name: bare-relay-gemini-3.7-flash
+cmd: uv run ../solution.py --provider openrouter --model google/gemini-3.7-flash
+profile:
+  model: google/gemini-3.7-flash
+  framework: openrouter
+timeout: 300
+tasks:
+  # Must stay equal to the commit registered on trapstreet — submit matches
+  # {repo, commit, subdirectory} exactly and 404s on any mismatch.
+  love-or-fifty-million:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@c140d90a53a8af9c7f36a1dc1f844c8f8e915c8f#subdirectory=tasks/love_or_fifty_million
