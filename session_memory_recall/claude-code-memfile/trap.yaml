@@ -1,0 +1,15 @@
+# Same harness as claude-code-noplugins, plus a working-directory-independent
+# memory file. The one variable between the two rows is the store.
+name: claude-code-memfile
+# run_case.sh cd's into a temp dir before invoking the harness, so the path
+# to harness.sh has to be absolute by then. cmd runs in this directory, so
+# $PWD is resolved here and handed on.
+cmd: bash -c 'H="$PWD/harness.sh"; exec bash task/tasks/session_memory_recall/tools/run_case.sh bash "$H"'
+profile:
+  model: claude-sonnet-5
+  framework: claude-code
+timeout: 900
+tasks:
+  session-memory-recall:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@006c72b1b464f495f3fc9f6e29180527f6c3738b#subdirectory=tasks/session_memory_recall
+    clone_to: task
