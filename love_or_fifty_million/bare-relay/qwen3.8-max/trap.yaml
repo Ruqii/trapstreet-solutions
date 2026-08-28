@@ -10,4 +10,4 @@ tasks:
   # Must stay equal to the commit registered on trapstreet — submit matches
   # {repo, commit, subdirectory} exactly and 404s on any mismatch.
   love-or-fifty-million:
-    source: git+https://github.com/trapstreet/trapstreet-tasks@a55d32016bdee33f192cc2f8b1000f572fa3b4bb#subdirectory=tasks/love_or_fifty_million
+    source: git+https://github.com/trapstreet/trapstreet-tasks@1d49a6763739285974cc5f04a827b4e2620536f8#subdirectory=tasks/love_or_fifty_million
