@@ -18,13 +18,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 # The answer is two short lines, but reasoning models spend the budget before
-# they write anything. A cap tight enough to look sufficient is how a run comes
-# back with empty content and scores 0 for "no choice on line 1" — a judging
-# artefact, not a refusal.
-MAX_TOKENS = 4096
+# they write anything, and the cap covers the thinking too. 4096 was not enough:
+# deepseek-v4-pro returned 4097 output tokens and empty content — truncated
+# mid-thought, then scored 0 for a refusal it never made. Sized for the thinking,
+# not the answer.
+MAX_TOKENS = 16000
 
 # Every provider below the Anthropic line speaks the OpenAI chat API; only the
 # base URL and the key differ. DeepSeek and Moonshot are called directly rather
@@ -88,13 +90,30 @@ def call_openai_compatible(provider: str, model: str, question: str) -> tuple[st
         messages=[{"role": "user", "content": question}],
     )
     text = ""
+    finish = None
     if resp.choices:
-        ch = resp.choices[0].message
+        choice = resp.choices[0]
+        finish = choice.finish_reason
+        ch = choice.message
         if ch.content:
             text = ch.content.strip()
-        elif getattr(ch, "reasoning", None):
-            # Some reasoning models return the answer only inside the trace.
-            text = ch.reasoning.strip()
+        else:
+            # Some reasoning models put the answer only in the trace. DeepSeek's
+            # own API calls that field reasoning_content; OpenRouter normalises
+            # the same thing to reasoning.
+            for field in ("reasoning_content", "reasoning"):
+                trace = getattr(ch, field, None)
+                if trace:
+                    text = trace.strip()
+                    break
+
+    # Truncation and refusal both surface as a 0 on the board, and only one of
+    # them is the model's doing. trap captures stderr with the run, so leave the
+    # difference somewhere it can be read later.
+    if finish and finish != "stop":
+        print(f"[finish_reason={finish}; content={'empty' if not text else 'present'}]",
+              file=sys.stderr)
+
     u = resp.usage
     return text, {
         "input_tokens": getattr(u, "prompt_tokens", 0) or 0,
