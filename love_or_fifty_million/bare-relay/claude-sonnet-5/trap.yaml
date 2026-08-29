@@ -1,0 +1,9 @@
+name: bare-relay-claude-sonnet-5
+cmd: uv run ../solution.py --provider anthropic --model claude-sonnet-5
+profile:
+  model: claude-sonnet-5
+  framework: anthropic-api
+timeout: 300
+tasks:
+  love-or-fifty-million:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@369cfde2f70711a31ddac6a49a579017849f17d5#subdirectory=tasks/love_or_fifty_million
