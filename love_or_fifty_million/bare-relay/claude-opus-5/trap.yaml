@@ -6,4 +6,4 @@ profile:
 timeout: 300
 tasks:
   love-or-fifty-million:
-    source: git+https://github.com/trapstreet/trapstreet-tasks@1d49a6763739285974cc5f04a827b4e2620536f8#subdirectory=tasks/love_or_fifty_million
+    source: git+https://github.com/trapstreet/trapstreet-tasks@369cfde2f70711a31ddac6a49a579017849f17d5#subdirectory=tasks/love_or_fifty_million
