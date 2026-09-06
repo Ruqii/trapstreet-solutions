@@ -10,7 +10,7 @@ timeout: 600
 tasks:
   frontend-silent-defects:
     source: ../../../trapstreet-tasks/unvalidated/frontend_silent_defects
-  # The six scored cases only. The three open briefs emit score: null, so they
+  # The seven scored cases only. The three open briefs emit score: null, so they
   # cannot answer the question this probe exists to answer, and running them
   # would add half again to the bill. Rebuild with the snippet in README.md.
   scored-only:

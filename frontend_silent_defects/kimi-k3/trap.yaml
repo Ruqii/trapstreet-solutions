@@ -1,15 +1,18 @@
 name: kimi-k3
-cmd: uv run solution.py --provider openrouter --model moonshotai/kimi-k3
+cmd: uv run solution.py --provider moonshot --model kimi-k3
 profile:
-  model: moonshotai/kimi-k3
-  framework: openrouter-api
+  model: kimi-k3
+  framework: moonshot
   notes: >-
-    Bare relay, identical to the other two arms in everything but the model.
+    Bare relay, identical to the other two arms in everything but the model and
+    the endpoint. Called against Moonshot directly rather than through
+    OpenRouter: the key is separate, and an OpenRouter run on 2026-09-06 died
+    five cases in on a 402 in_flight_budget_exhausted.
 timeout: 600
 tasks:
   frontend-silent-defects:
     source: ../../../trapstreet-tasks/unvalidated/frontend_silent_defects
-  # The six scored cases only. The three open briefs emit score: null, so they
+  # The seven scored cases only. The three open briefs emit score: null, so they
   # cannot answer the question this probe exists to answer, and running them
   # would add half again to the bill. Rebuild with the snippet in README.md.
   scored-only:

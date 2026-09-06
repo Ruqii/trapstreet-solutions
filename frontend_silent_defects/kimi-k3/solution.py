@@ -52,13 +52,20 @@ def call_anthropic(model: str, system: str | None, user_message: str) -> str:
     return next((b.text for b in msg.content if b.type == "text"), "").strip()
 
 
-def call_openrouter(model: str, system: str | None, user_message: str) -> str:
+# OpenAI-compatible endpoints. Moonshot is called directly rather than through
+# OpenRouter because the key is separate and the routed catalogue is not the
+# same catalogue — matching the pattern already used in love_or_fifty_million.
+OPENAI_COMPATIBLE = {
+    "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY"),
+    "moonshot": ("https://api.moonshot.ai/v1", "MOONSHOT_API_KEY"),
+}
+
+
+def call_openai_compatible(provider: str, model: str, system: str | None, user_message: str) -> str:
     from openai import OpenAI
 
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=os.environ["OPENROUTER_API_KEY"],
-    )
+    base_url, key_var = OPENAI_COMPATIBLE[provider]
+    client = OpenAI(base_url=base_url, api_key=os.environ[key_var], max_retries=10)
     messages = []
     if system is not None:
         messages.append({"role": "system", "content": system})
@@ -68,8 +75,9 @@ def call_openrouter(model: str, system: str | None, user_message: str) -> str:
 
 
 PROVIDERS = {
-    "anthropic": call_anthropic,
-    "openrouter": call_openrouter,
+    "anthropic": lambda m, s, u: call_anthropic(m, s, u),
+    "openrouter": lambda m, s, u: call_openai_compatible("openrouter", m, s, u),
+    "moonshot": lambda m, s, u: call_openai_compatible("moonshot", m, s, u),
 }
 
 
