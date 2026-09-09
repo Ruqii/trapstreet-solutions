@@ -84,7 +84,12 @@ def call_openai_compatible(provider: str, model: str, system: str | None, user_m
     if system is not None:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": user_message})
-    resp = client.chat.completions.create(model=model, max_tokens=MAX_TOKENS, messages=messages)
+    # OpenAI's own API rejects `max_tokens` for these models and wants
+    # `max_completion_tokens`; OpenRouter and Moonshot still take the old name
+    # and translate. Same budget either way — only the spelling differs.
+    budget = ({"max_completion_tokens": MAX_TOKENS} if provider == "openai"
+              else {"max_tokens": MAX_TOKENS})
+    resp = client.chat.completions.create(model=model, messages=messages, **budget)
     return (resp.choices[0].message.content or "").strip()
 
 

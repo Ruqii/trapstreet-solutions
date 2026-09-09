@@ -8,7 +8,7 @@ profile:
     the endpoint. Called against Moonshot directly rather than through
     OpenRouter: the key is separate, and an OpenRouter run on 2026-09-06 died
     five cases in on a 402 in_flight_budget_exhausted.
-timeout: 1800
+timeout: 3600
 tasks:
   frontend-silent-defects:
     source: ../../../trapstreet-tasks/unvalidated/frontend_silent_defects
