@@ -25,6 +25,10 @@ import json
 import os
 from pathlib import Path
 
+# Set per run, not per arm: every arm in a given comparison uses the same
+# value, so a pair never differs by output budget.
+MAX_TOKENS = int(os.environ.get("TRAP_MAX_TOKENS", "16000"))
+
 
 def build_prompt(question: str) -> tuple[str | None, str]:
     """Return (system_prompt_or_None, user_message).
@@ -45,7 +49,7 @@ def call_anthropic(model: str, system: str | None, user_message: str) -> str:
         kwargs["system"] = system
     msg = client.messages.create(
         model=model,
-        max_tokens=16000,
+        max_tokens=MAX_TOKENS,
         messages=[{"role": "user", "content": user_message}],
         **kwargs,
     )
@@ -70,7 +74,7 @@ def call_openai_compatible(provider: str, model: str, system: str | None, user_m
     if system is not None:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": user_message})
-    resp = client.chat.completions.create(model=model, max_tokens=16000, messages=messages)
+    resp = client.chat.completions.create(model=model, max_tokens=MAX_TOKENS, messages=messages)
     return (resp.choices[0].message.content or "").strip()
 
 

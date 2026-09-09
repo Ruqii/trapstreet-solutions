@@ -1,0 +1,17 @@
+name: gpt-mini
+cmd: uv run solution.py --provider openrouter --model openai/gpt-5.4-mini
+profile:
+  model: openai/gpt-5.4-mini
+  framework: openrouter-api
+  notes: >-
+    The deliberately weaker arm. These pages exist to give the judge-validation
+    set a quality gradient: three frontier arms produced pages the task owner
+    could not reliably separate, and a validation set whose labels are coin
+    flips validates nothing. Same bare relay, same endpoint as gpt-terra, one
+    tier down. max_tokens comes from TRAP_MAX_TOKENS per run.
+timeout: 600
+tasks:
+  constrained:
+    source: /private/tmp/claude-501/-Users-zhengruqi-Documents-Projects-trapstreet-tasks/8b527a96-6300-42b0-97ba-807f9043399d/scratchpad/task-constrained
+  open:
+    source: /private/tmp/claude-501/-Users-zhengruqi-Documents-Projects-trapstreet-tasks/8b527a96-6300-42b0-97ba-807f9043399d/scratchpad/task-open

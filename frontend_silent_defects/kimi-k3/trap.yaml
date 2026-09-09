@@ -17,3 +17,6 @@ tasks:
   # would add half again to the bill. Rebuild with the snippet in README.md.
   scored-only:
     source: /private/tmp/claude-501/-Users-zhengruqi-Documents-Projects-trapstreet-tasks/8b527a96-6300-42b0-97ba-807f9043399d/scratchpad/task-scored
+  # The three open briefs, for the judge-validation set.
+  open:
+    source: /private/tmp/claude-501/-Users-zhengruqi-Documents-Projects-trapstreet-tasks/8b527a96-6300-42b0-97ba-807f9043399d/scratchpad/task-open
