@@ -1,13 +1,13 @@
 name: gpt-terra
-cmd: uv run solution.py --provider openrouter --model openai/gpt-5.6-terra-pro
+cmd: uv run solution.py --provider openai --model gpt-5.6-terra
 profile:
-  model: openai/gpt-5.6-terra-pro
-  framework: openrouter-api
+  model: gpt-5.6-terra
+  framework: openai-api
   notes: >-
     Bare relay: the brief goes to the model verbatim, no system prompt, no
     tools, no retries on content. One of three arms run to answer a single
     question - do the six deterministic cases separate frontier models at all.
-timeout: 600
+timeout: 1800
 tasks:
   frontend-silent-defects:
     source: ../../../trapstreet-tasks/unvalidated/frontend_silent_defects

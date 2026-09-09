@@ -47,12 +47,17 @@ def call_anthropic(model: str, system: str | None, user_message: str) -> str:
     kwargs = {}
     if system is not None:
         kwargs["system"] = system
-    msg = client.messages.create(
+    # Streamed, not because we want the tokens as they arrive but because the SDK
+    # refuses a non-streaming request whose max_tokens implies more than ten
+    # minutes of work. At 16000 that never fired; raising the budget for the open
+    # briefs made every Anthropic call fail before it left the machine.
+    with client.messages.stream(
         model=model,
         max_tokens=MAX_TOKENS,
         messages=[{"role": "user", "content": user_message}],
         **kwargs,
-    )
+    ) as stream:
+        msg = stream.get_final_message()
     return next((b.text for b in msg.content if b.type == "text"), "").strip()
 
 
@@ -60,6 +65,11 @@ def call_anthropic(model: str, system: str | None, user_message: str) -> str:
 # OpenRouter because the key is separate and the routed catalogue is not the
 # same catalogue — matching the pattern already used in love_or_fifty_million.
 OPENAI_COMPATIBLE = {
+    # Direct, not routed. OpenRouter's weekly key limit refused a 32000-token
+    # request twice in two days, and a route is a variable we are not trying to
+    # measure. Note the catalogues differ: OpenRouter lists gpt-5.6-terra-pro,
+    # the direct API does not — it has gpt-5.6-terra.
+    "openai": ("https://api.openai.com/v1", "OPENAI_API_KEY"),
     "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY"),
     "moonshot": ("https://api.moonshot.ai/v1", "MOONSHOT_API_KEY"),
 }
@@ -82,6 +92,7 @@ PROVIDERS = {
     "anthropic": lambda m, s, u: call_anthropic(m, s, u),
     "openrouter": lambda m, s, u: call_openai_compatible("openrouter", m, s, u),
     "moonshot": lambda m, s, u: call_openai_compatible("moonshot", m, s, u),
+    "openai": lambda m, s, u: call_openai_compatible("openai", m, s, u),
 }
 
 

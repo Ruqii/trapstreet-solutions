@@ -6,7 +6,7 @@ profile:
   notes: >-
     Same relay as the 2026-08-31 probe, re-run on the same day as the other
     two arms so the comparison is not across judge versions.
-timeout: 600
+timeout: 1800
 tasks:
   frontend-silent-defects:
     source: ../../../trapstreet-tasks/unvalidated/frontend_silent_defects
