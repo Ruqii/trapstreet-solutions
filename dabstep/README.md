@@ -24,6 +24,12 @@ planning, sub-agents or context management.
   files are real files and nothing is written into the task.
 - **Thinking.** Each arm uses its vendor's default: adaptive on Opus 5, on at
   effort high on DeepSeek.
+- **Prompt caching.** Each arm uses its vendor's standard mechanism. DeepSeek
+  caches on its own. For Claude the minimal loop turns on automatic caching (one
+  top-level `cache_control`). Both loop arms therefore resend their growing
+  transcript at cache rates, and their cost difference, like their score
+  difference, is the model's.
+- **Time.** Every arm gets 1800 seconds per case.
 - **No network beyond the model.** Web search and fetch are off, and every
   HTTP(S) proxy variable points at a closed port for the harness and anything
   it runs. Loopback, where the cost proxy listens, is exempt.

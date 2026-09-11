@@ -16,6 +16,10 @@ model's, not the harness's.
 
 - Thinking is left at each vendor's default (Opus 5: adaptive; DeepSeek:
   enabled, effort high), matching what Claude Code and DSH send.
+- Prompt caching is each vendor's standard mechanism: DeepSeek caches on its
+  own; for Claude the loop turns on automatic caching (one top-level
+  cache_control), so both arms resend their growing transcript at cache rates
+  and their cost difference is the model's, like their score difference.
 - Refusals are an outcome of their own. No server-side fallback is enabled,
   because a fallback answers with a different model and the arm would no
   longer be the model it names. A refusal is logged to stderr with its
@@ -131,6 +135,7 @@ class Anthropic:
         with self.client.messages.stream(
             model=self.model, max_tokens=MAX_TOKENS, system=SYSTEM, tools=self.tools,
             tool_choice={"type": "auto" if tools_on else "none"}, messages=messages,
+            cache_control={"type": "ephemeral"},  # automatic caching of the resent transcript
         ) as stream:
             response = stream.get_final_message()
         messages.append({"role": "assistant", "content": response.content})  # thinking blocks included

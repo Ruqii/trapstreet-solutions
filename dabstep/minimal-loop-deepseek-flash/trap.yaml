@@ -9,7 +9,7 @@ profile:
     baseline shape). Runs the same ../minimal_loop.py as minimal-loop-opus5,
     so only the model differs. DeepSeek's OpenAI-format endpoint; thinking at
     the vendor default (on, effort high); no network.
-timeout: 900
+timeout: 1800
 tasks:
   dabstep:
     source: git+https://github.com/trapstreet/trapstreet-tasks@41c111ef0e3e7fde023f15bb8e8c15b48e0a6383#subdirectory=tasks/dabstep

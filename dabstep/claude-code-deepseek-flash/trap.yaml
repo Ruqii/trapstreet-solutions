@@ -8,7 +8,7 @@ profile:
     Anthropic-format endpoint; every model slot set to deepseek-flash. Fresh
     config dir per case, WebSearch/WebFetch disallowed, no network. Launch
     with ../run-arm.sh, which sets the upstream the cost proxy needs.
-timeout: 1500
+timeout: 1800
 tasks:
   dabstep:
     source: git+https://github.com/trapstreet/trapstreet-tasks@41c111ef0e3e7fde023f15bb8e8c15b48e0a6383#subdirectory=tasks/dabstep

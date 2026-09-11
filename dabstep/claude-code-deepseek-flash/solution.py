@@ -36,7 +36,7 @@ import tempfile
 from pathlib import Path
 
 MODEL = "deepseek-flash"
-TIMEOUT_S = 1400  # under trap.yaml's timeout, so a slow case still reports
+TIMEOUT_S = 1700  # under trap.yaml's timeout, so a slow case still reports
 DEAD_PROXY = "http://127.0.0.1:9"
 TOOLS = ("Read Glob Grep Write Edit NotebookEdit Agent TaskCreate TaskUpdate TaskList TaskGet "
          "Bash(python3:*) Bash(ls:*) Bash(head:*) Bash(wc:*)")
