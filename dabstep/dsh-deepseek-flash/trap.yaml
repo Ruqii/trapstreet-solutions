@@ -1,0 +1,14 @@
+name: dsh-deepseek-flash
+cmd: bash run.sh
+profile:
+  model: deepseek-flash
+  framework: deepseek-harness
+  notes: >-
+    Stock DeepSeek Harness, headless profile, zero plugins, its default model
+    (deepseek-flash, thinking on at effort high). dsh 0.1.5-rc.1 with every
+    sub-package pinned by package-lock.json. Web search and all other
+    outbound HTTP blocked; model calls go through the cost proxy.
+timeout: 1500
+tasks:
+  dabstep:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@41c111ef0e3e7fde023f15bb8e8c15b48e0a6383#subdirectory=tasks/dabstep

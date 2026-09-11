@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Pins the DeepSeek Harness this arm runs; run.sh installs it with npm ci.",
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.1.5-rc.1"
+  }
+}

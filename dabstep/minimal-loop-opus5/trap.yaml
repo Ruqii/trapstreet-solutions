@@ -1,0 +1,15 @@
+name: minimal-loop-opus5
+cmd: uv run ../minimal_loop.py --api anthropic --model claude-opus-5
+profile:
+  model: claude-opus-5
+  framework: minimal-loop
+  notes: >-
+    The simple harness: one run_python tool, at most 10 runs, then a final
+    answer; no planning, sub-agents or context management (DABStep's ReAct
+    baseline shape). Runs the same ../minimal_loop.py as
+    minimal-loop-deepseek-flash, so only the model differs. Thinking at the
+    vendor default; no refusal fallback; no network.
+timeout: 900
+tasks:
+  dabstep:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@41c111ef0e3e7fde023f15bb8e8c15b48e0a6383#subdirectory=tasks/dabstep
