@@ -38,8 +38,12 @@ from pathlib import Path
 MODEL = "deepseek-flash"
 TIMEOUT_S = 1700  # under trap.yaml's timeout, so a slow case still reports
 DEAD_PROXY = "http://127.0.0.1:9"
+# Shell access is the read-only data toolkit a person would reach for (no rm, no
+# installs, no network). The smoke run's only permission denials were awk / sort /
+# uniq / cat pipelines, so those are in.
 TOOLS = ("Read Glob Grep Write Edit NotebookEdit Agent TaskCreate TaskUpdate TaskList TaskGet "
-         "Bash(python3:*) Bash(ls:*) Bash(head:*) Bash(wc:*)")
+         "Bash(python3:*) Bash(python:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cat:*) "
+         "Bash(awk:*) Bash(sort:*) Bash(uniq:*) Bash(cut:*) Bash(tr:*) Bash(grep:*) Bash(jq:*) Bash(echo:*)")
 PROMPT_SUFFIX = "\n\nThe files are in the current working directory."
 
 
