@@ -13,8 +13,8 @@ name (DeepSeek would answer it, and the cost proxy would price it at Claude
 rates).
 
 Metering: the upstream is set in the shell that launches `tp run`
-(ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic, see ../run-arm.sh); tp
-then points ANTHROPIC_BASE_URL at its cost proxy for this process. Setting the
+(ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic, from this arm's .envrc);
+tp then points ANTHROPIC_BASE_URL at its cost proxy for this process. Setting the
 DeepSeek URL here instead would bypass the proxy and the run would carry no
 cost.
 
@@ -50,7 +50,8 @@ PROMPT_SUFFIX = "\n\nThe files are in the current working directory."
 def main() -> int:
     proxy = os.environ.get("ANTHROPIC_BASE_URL", "")
     if not proxy.startswith(("http://127.0.0.1:", "http://localhost:")):
-        raise SystemExit("ANTHROPIC_BASE_URL is not the tp cost proxy; launch with ../run-arm.sh")
+        raise SystemExit("ANTHROPIC_BASE_URL is not the tp cost proxy; run `tp run` from this "
+                         "directory with its .envrc loaded (direnv allow)")
     key = os.environ.get("DEEPSEEK_API_KEY")
     if not key:
         raise SystemExit("DEEPSEEK_API_KEY is not set")

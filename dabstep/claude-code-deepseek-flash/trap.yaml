@@ -6,8 +6,8 @@ profile:
   notes: >-
     Claude Code as shipped (not --bare), headless, on DeepSeek's
     Anthropic-format endpoint; every model slot set to deepseek-flash. Fresh
-    config dir per case, WebSearch/WebFetch disallowed, no network. Launch
-    with ../run-arm.sh, which sets the upstream the cost proxy needs.
+    config dir per case, WebSearch/WebFetch disallowed, no network. Its .envrc
+    sets the upstream the cost proxy forwards to.
 timeout: 1800
 tasks:
   dabstep:

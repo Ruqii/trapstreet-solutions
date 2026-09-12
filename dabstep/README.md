@@ -42,21 +42,27 @@ planning, sub-agents or context management.
 ## Running an arm
 
 ```bash
-dabstep/run-arm.sh minimal-loop-opus5 -t easy
+cp dabstep/.env.example dabstep/.env          # then fill in both keys
+direnv allow dabstep dabstep/claude-code-deepseek-flash
+cd dabstep/minimal-loop-opus5 && tp run
 ```
 
-Anything after the arm name goes to `tp run`. The wrapper exists because tp's
-cost proxy reads each vendor's key and upstream from tp's own environment:
+tp's cost proxy reads each vendor's key and upstream from the shell that runs
+`tp run`, so both come from direnv:
 
-- it loads the keys from `dabstep/.env` (gitignored: `ANTHROPIC_API_KEY`,
-  `DEEPSEEK_API_KEY`);
-- it sets `ANTHROPIC_BASE_URL` to DeepSeek's Anthropic-format endpoint for the
-  Claude Code arm only;
-- it unsets `TRAPSTREET_URL`, so every arm is priced from the production price
-  table.
+- `dabstep/.envrc` loads the keys from `dabstep/.env` (gitignored:
+  `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`) for every arm;
+- `claude-code-deepseek-flash/.envrc` also sets `ANTHROPIC_BASE_URL` to
+  DeepSeek's Anthropic-format endpoint, the upstream the proxy forwards that
+  arm's requests to.
 
 Each solution refuses to start if its model calls would not pass through the
 proxy.
+
+The task is graded on uat.trapstreet.run, so pass `--server
+https://uat.trapstreet.run` to send the answers there. Leave `TRAPSTREET_URL`
+unset: tp also reads its price table from that variable, and only the
+production table prices `deepseek-flash`.
 
 ## Reading the cost
 

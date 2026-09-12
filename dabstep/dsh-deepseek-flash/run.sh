@@ -9,13 +9,13 @@
 set -uo pipefail
 
 : "${TRAP_MANIFEST:?run.sh must run under trap}"
-: "${DEEPSEEK_API_KEY:?export DEEPSEEK_API_KEY in the shell that runs tp (../run-arm.sh does)}"
+: "${DEEPSEEK_API_KEY:?DEEPSEEK_API_KEY must be in the shell that runs tp (dabstep/.env via direnv)}"
 # tp points DEEPSEEK_BASE_URL at its cost proxy only when DEEPSEEK_API_KEY was
 # already in tp's own environment. Without the proxy the run spends money and
 # records no cost, so refuse before the first request.
 case "${DEEPSEEK_BASE_URL:-}" in
     http://127.0.0.1:*|http://localhost:*) ;;
-    *) echo "DEEPSEEK_BASE_URL is not the tp cost proxy; launch with ../run-arm.sh" >&2; exit 2 ;;
+    *) echo "DEEPSEEK_BASE_URL is not the tp cost proxy; load dabstep/.env (direnv allow) before tp run" >&2; exit 2 ;;
 esac
 
 # The harness is pinned by package-lock.json, not by a version string: dsh's
