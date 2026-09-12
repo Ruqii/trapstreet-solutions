@@ -1,0 +1,15 @@
+name: claude-code + kimi-k3
+cmd: python3 ../claude_code.py --model kimi-k3[1m] --key-env MOONSHOT_API_KEY --auth bearer --all-slots --env ANTHROPIC_DEFAULT_HAIKU_MODEL=kimi-k2.7-code --env ANTHROPIC_SMALL_FAST_MODEL=kimi-k2.7-code --env CLAUDE_CODE_AUTO_COMPACT_WINDOW=1000000 --env CLAUDE_CODE_EFFORT_LEVEL=max
+profile:
+  model: kimi-k3
+  framework: claude-code
+  notes: >-
+    Claude Code as shipped (not --bare), headless, on Moonshot's
+    Anthropic-format endpoint, set up as Kimi's own Claude Code guide says:
+    kimi-k3[1m] in every slot except the haiku slot (kimi-k2.7-code), effort
+    max, a 1M auto-compact window. Fresh config dir per case,
+    WebSearch/WebFetch disallowed, no network.
+timeout: 1800
+tasks:
+  dabstep:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@e7e12e652aa2f31387968eb8623da14465a12263#subdirectory=tasks/dabstep

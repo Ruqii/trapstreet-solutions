@@ -10,12 +10,25 @@ and what each costs.
 | `mini-loop-deepseek-flash` (deepseek-flash · mini-loop) | deepseek-flash | mini-loop | DeepSeek, OpenAI format |
 | `claude-code-deepseek-flash` (deepseek-flash · claude-code) | deepseek-flash | Claude Code | DeepSeek, Anthropic format |
 | `dsh-deepseek-flash` (deepseek-flash · dsh) | deepseek-flash | DeepSeek Harness (0.1.5-rc.1, locked) | DeepSeek, OpenAI format |
+| `claude-code-claude-opus-5` (claude-opus-5 · claude-code) | claude-opus-5 | Claude Code | Anthropic API |
+| `claude-code-kimi-k3` (kimi-k3 · claude-code) | kimi-k3 | Claude Code | Moonshot, Anthropic format |
+| `claude-code-glm-5.3-flash` (z-ai/glm-5.3-flash · claude-code) | z-ai/glm-5.3-flash | Claude Code | OpenRouter, Anthropic format |
 
 The two mini-loop arms run the same file, [`mini_loop.py`](mini_loop.py), so
 their difference is the model. The three deepseek-flash arms share a model, so
 their differences are the harness. mini-loop is DABStep's ReAct baseline
 shape: one `run_python` tool, at most 10 runs, then a final answer, with no
 planning, sub-agents or context management.
+
+The claude-code arms share [`claude_code.py`](claude_code.py) (the first one,
+`claude-code-deepseek-flash`, runs the same logic from its own `solution.py`).
+Each is set up the way its vendor documents Claude Code: Anthropic with the
+defaults (Claude Code's own small/fast model for side calls); Kimi per Kimi's
+guide (kimi-k3[1m] everywhere but the haiku slot, kimi-k2.7-code; effort max;
+a 1M auto-compact window); DeepSeek and GLM with every model slot pinned to the
+one model. A third-party key goes in `ANTHROPIC_AUTH_TOKEN` with
+`ANTHROPIC_API_KEY` blanked. GLM goes through OpenRouter, whose cached tokens
+the site cannot price yet, so its cost can show as unknown.
 
 ## Held fixed across arms
 
@@ -51,10 +64,11 @@ tp's cost proxy reads each vendor's key and upstream from the shell that runs
 `tp run`, so both come from direnv:
 
 - `dabstep/.envrc` loads the keys from `dabstep/.env` (gitignored:
-  `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`) for every arm;
-- `claude-code-deepseek-flash/.envrc` also sets `ANTHROPIC_BASE_URL` to
-  DeepSeek's Anthropic-format endpoint, the upstream the proxy forwards that
-  arm's requests to;
+  `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, `MOONSHOT_API_KEY`,
+  `OPENROUTER_API_KEY`) for every arm;
+- each claude-code arm's `.envrc` sets `ANTHROPIC_BASE_URL` to its vendor's
+  endpoint (Anthropic, DeepSeek, Moonshot or OpenRouter), the upstream the
+  proxy forwards that arm's requests to;
 - each arm's `.envrc` sets `TRAP_AGENT` to its harness. A site-graded run that
   declares no name is listed as `<model> · <agent>`, so the board reads
   `deepseek-flash · mini-loop`, `deepseek-flash · claude-code` and so on.

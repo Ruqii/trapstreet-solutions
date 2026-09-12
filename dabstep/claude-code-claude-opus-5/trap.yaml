@@ -1,0 +1,14 @@
+name: claude-code + claude-opus-5
+cmd: python3 ../claude_code.py --model claude-opus-5 --key-env ANTHROPIC_API_KEY
+profile:
+  model: claude-opus-5
+  framework: claude-code
+  notes: >-
+    Claude Code as shipped (not --bare), headless, on Anthropic's API with its
+    default setup: claude-opus-5 as the main model, Claude Code's own
+    small/fast model for side calls. Fresh config dir per case,
+    WebSearch/WebFetch disallowed, no network.
+timeout: 1800
+tasks:
+  dabstep:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@e7e12e652aa2f31387968eb8623da14465a12263#subdirectory=tasks/dabstep

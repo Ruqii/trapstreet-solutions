@@ -1,0 +1,15 @@
+name: claude-code + glm-5.3-flash
+cmd: python3 ../claude_code.py --model z-ai/glm-5.3-flash --key-env OPENROUTER_API_KEY --auth bearer --all-slots
+profile:
+  model: z-ai/glm-5.3-flash
+  framework: claude-code
+  notes: >-
+    Claude Code as shipped (not --bare), headless, on OpenRouter's
+    Anthropic-format endpoint (OpenRouter's Claude Code guide), every model
+    slot pinned to z-ai/glm-5.3-flash. Fresh config dir per case,
+    WebSearch/WebFetch disallowed, no network. Cost shows as unknown on cases
+    that hit OpenRouter's cache until the site serves cache prices.
+timeout: 1800
+tasks:
+  dabstep:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@e7e12e652aa2f31387968eb8623da14465a12263#subdirectory=tasks/dabstep
