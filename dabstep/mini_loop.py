@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["anthropic>=0.60", "openai>=1.60"]
 # ///
-"""The simple harness shared by every minimal-loop arm on dabstep.
+"""mini-loop: the simple harness shared by every mini-loop arm on dabstep.
 
 One tool (run a Python snippet in the case directory, get stdout/stderr back),
 at most MAX_ROUNDS rounds of it, then one last request with tools switched off
@@ -10,7 +10,7 @@ if the model is still asking for code. No planning prompt, no sub-agents, no
 context management, no retries on a wrong answer. This is the shape of DABStep's
 own ReAct baseline.
 
-Every minimal-loop arm runs these exact bytes; an arm is only a --api/--model
+Every mini-loop arm runs these exact bytes; an arm is only a --api/--model
 pair in its trap.yaml, so a score difference between two such arms is the
 model's, not the harness's.
 

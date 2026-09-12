@@ -1,4 +1,4 @@
-name: claude-code-deepseek-flash
+name: claude-code + deepseek-flash
 cmd: python3 solution.py
 profile:
   model: deepseek-flash
@@ -11,4 +11,4 @@ profile:
 timeout: 1800
 tasks:
   dabstep:
-    source: git+https://github.com/trapstreet/trapstreet-tasks@41c111ef0e3e7fde023f15bb8e8c15b48e0a6383#subdirectory=tasks/dabstep
+    source: git+https://github.com/trapstreet/trapstreet-tasks@e7e12e652aa2f31387968eb8623da14465a12263#subdirectory=tasks/dabstep

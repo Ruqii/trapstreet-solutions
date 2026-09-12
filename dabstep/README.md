@@ -4,16 +4,16 @@ Four arms on the `dabstep` task (DABStep's questions, 25 cases: 5 easy, 20 hard)
 built to separate what the model contributes from what the harness contributes,
 and what each costs.
 
-| Arm | Model | Harness | Route |
+| Arm (board name) | Model | Harness | Route |
 |---|---|---|---|
-| `minimal-loop-opus5` | claude-opus-5 | minimal loop | Anthropic API |
-| `minimal-loop-deepseek-flash` | deepseek-flash | minimal loop | DeepSeek, OpenAI format |
-| `claude-code-deepseek-flash` | deepseek-flash | Claude Code | DeepSeek, Anthropic format |
-| `dsh-deepseek-flash` | deepseek-flash | DeepSeek Harness (0.1.5-rc.1, locked) | DeepSeek, OpenAI format |
+| `mini-loop-claude-opus-5` (claude-opus-5 · mini-loop) | claude-opus-5 | mini-loop | Anthropic API |
+| `mini-loop-deepseek-flash` (deepseek-flash · mini-loop) | deepseek-flash | mini-loop | DeepSeek, OpenAI format |
+| `claude-code-deepseek-flash` (deepseek-flash · claude-code) | deepseek-flash | Claude Code | DeepSeek, Anthropic format |
+| `dsh-deepseek-flash` (deepseek-flash · dsh) | deepseek-flash | DeepSeek Harness (0.1.5-rc.1, locked) | DeepSeek, OpenAI format |
 
-The two minimal-loop arms run the same file, [`minimal_loop.py`](minimal_loop.py), so
+The two mini-loop arms run the same file, [`mini_loop.py`](mini_loop.py), so
 their difference is the model. The three deepseek-flash arms share a model, so
-their differences are the harness. The minimal loop is DABStep's ReAct baseline
+their differences are the harness. mini-loop is DABStep's ReAct baseline
 shape: one `run_python` tool, at most 10 runs, then a final answer, with no
 planning, sub-agents or context management.
 
@@ -25,7 +25,7 @@ planning, sub-agents or context management.
 - **Thinking.** Each arm uses its vendor's default: adaptive on Opus 5, on at
   effort high on DeepSeek.
 - **Prompt caching.** Each arm uses its vendor's standard mechanism. DeepSeek
-  caches on its own. For Claude the minimal loop turns on automatic caching (one
+  caches on its own. For Claude mini-loop turns on automatic caching (one
   top-level `cache_control`). Both loop arms therefore resend their growing
   transcript at cache rates, and their cost difference, like their score
   difference, is the model's.
@@ -35,7 +35,7 @@ planning, sub-agents or context management.
   it runs. Loopback, where the cost proxy listens, is exempt.
 - **Python.** Code runs under the `python3` on PATH (pandas, numpy).
 - **No refusal fallback.** A fallback answers with a different model, so the arm
-  would no longer be the model it names. The minimal loop logs a refusal and its
+  would no longer be the model it names. mini-loop logs a refusal and its
   category to stderr and gives no ANSWER line. Refusals are counted as their own
   outcome, not folded into wrong answers.
 
@@ -43,8 +43,8 @@ planning, sub-agents or context management.
 
 ```bash
 cp dabstep/.env.example dabstep/.env          # then fill in both keys
-direnv allow dabstep dabstep/claude-code-deepseek-flash
-cd dabstep/minimal-loop-opus5 && tp run
+direnv allow dabstep dabstep/*/
+cd dabstep/mini-loop-claude-opus-5 && tp run --server https://uat.trapstreet.run
 ```
 
 tp's cost proxy reads each vendor's key and upstream from the shell that runs
@@ -54,7 +54,10 @@ tp's cost proxy reads each vendor's key and upstream from the shell that runs
   `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`) for every arm;
 - `claude-code-deepseek-flash/.envrc` also sets `ANTHROPIC_BASE_URL` to
   DeepSeek's Anthropic-format endpoint, the upstream the proxy forwards that
-  arm's requests to.
+  arm's requests to;
+- each arm's `.envrc` sets `TRAP_AGENT` to its harness. A site-graded run that
+  declares no name is listed as `<model> · <agent>`, so the board reads
+  `deepseek-flash · mini-loop`, `deepseek-flash · claude-code` and so on.
 
 Each solution refuses to start if its model calls would not pass through the
 proxy.
