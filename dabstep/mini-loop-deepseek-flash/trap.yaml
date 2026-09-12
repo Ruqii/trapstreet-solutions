@@ -8,7 +8,7 @@ profile:
     answer; no planning, sub-agents or context management (DABStep's ReAct
     baseline shape). Runs the same ../mini_loop.py as mini-loop + claude-opus-5,
     so only the model differs. DeepSeek's OpenAI-format endpoint; thinking at
-    the vendor default (on, effort high); no network.
+    the vendor default (on, effort high); snippets run in a jail that reads only the case copy, with no network.
 timeout: 1800
 tasks:
   dabstep:

@@ -7,9 +7,14 @@ is the model and its setup, not this adapter.
 
 Claude Code runs as shipped (its own system prompt, tool loop, sub-agents, task
 list), not in --bare mode: --bare sets CLAUDE_CODE_SIMPLE=1 and cuts Claude Code
-down to a minimal toolset. Isolation from this machine comes from a fresh
-CLAUDE_CONFIG_DIR per case instead: no user settings, hooks, plugins, memory or
-CLAUDE.md.
+down to a minimal toolset. Its configuration is a fresh CLAUDE_CONFIG_DIR per
+case instead: no user settings, hooks, plugins, memory or CLAUDE.md.
+
+The whole Claude Code process runs in ../sandbox.py's jail, not just its Bash
+tool: Read, Glob and Grep run in-process. It can read the case copy, its own
+binary and the system trees, write only the case root, and connect only to the
+cost proxy. Its session transcript is kept (copied to the case's outputs_dir)
+so every tool call can be audited before a run is published.
 
 Each arm is set up the way its vendor documents it:
 - Anthropic: the defaults. --model picks the main model and Claude Code keeps
@@ -26,9 +31,9 @@ Metering: the upstream is set in the shell that launches `tp run` (the arm's
 Setting a vendor URL here instead would bypass the proxy and the run would carry
 no cost.
 
-No web: WebSearch/WebFetch are disallowed, and every HTTP(S) proxy variable
-points at a closed port for Claude Code and the commands it runs, with only
-loopback (the cost proxy) exempt.
+No web: WebSearch/WebFetch are disallowed, the jail allows one loopback port
+(the cost proxy), and every HTTP(S) proxy variable points at a closed port.
+Commands Claude Code runs get no API key (CLAUDE_CODE_SUBPROCESS_ENV_SCRUB).
 
 stdout carries only Claude Code's final reply; its own JSON summary (turns,
 its view of usage) goes to stderr for cross-checking.
@@ -41,8 +46,9 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
+
+import sandbox
 
 TIMEOUT_S = 1700  # under trap.yaml's timeout, so a slow case still reports
 DEAD_PROXY = "http://127.0.0.1:9"
@@ -76,17 +82,23 @@ def main() -> int:
     if not key:
         raise SystemExit(f"{args.key_env} is not set")
 
-    inputs = Path(json.loads(os.environ["TRAP_MANIFEST"])["inputs_dir"])
+    manifest = json.loads(os.environ["TRAP_MANIFEST"])
+    inputs, outputs = Path(manifest["inputs_dir"]), Path(manifest["outputs_dir"])
     prompt = (inputs / "question.txt").read_text().rstrip() + PROMPT_SUFFIX
-    workdir = Path(tempfile.mkdtemp(prefix="dabstep-cc-"))
-    config_dir = Path(tempfile.mkdtemp(prefix="dabstep-cc-config-"))
+    claude = os.path.realpath(shutil.which("claude") or "claude")
+    root = sandbox.new_case_root("dabstep-cc-")
+    workdir, config_dir = root / "work", root / "config"
+    config_dir.mkdir()
     shutil.copytree(inputs, workdir, dirs_exist_ok=True)  # follows the symlinks: real copies
 
     env = {k: v for k, v in os.environ.items()
            if not k.startswith(("TRAP", "CLAUDE", "ANTHROPIC_", "VIRTUAL_ENV"))}
+    env = sandbox.jail_env(env, root)
     env.update(
         ANTHROPIC_BASE_URL=proxy,
         CLAUDE_CONFIG_DIR=str(config_dir),
+        CLAUDE_CODE_TMPDIR=str(root / "tmp"),
+        CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="1",
         CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1",
         DISABLE_AUTOUPDATER="1",
         API_TIMEOUT_MS="600000",
@@ -105,19 +117,23 @@ def main() -> int:
         env[name] = value
 
     cmd = [
-        "claude", "-p", prompt,
+        claude, "-p", prompt,
         "--model", args.model,
         "--output-format", "json",
         "--permission-mode", "acceptEdits",
         "--allowedTools", TOOLS,
         "--disallowedTools", "WebSearch WebFetch",
-        "--no-session-persistence",
     ]
+    cmd = sandbox.wrap(cmd, root=root, readable=[Path(claude)], port=sandbox.proxy_port(proxy))
     try:
         proc = subprocess.run(cmd, cwd=workdir, env=env, capture_output=True, text=True, timeout=TIMEOUT_S)
     finally:
-        shutil.rmtree(workdir, ignore_errors=True)
-        shutil.rmtree(config_dir, ignore_errors=True)
+        keep = outputs / "transcripts"
+        for jsonl in (config_dir / "projects").rglob("*.jsonl"):  # the session and any sub-agents'
+            dest = keep / jsonl.relative_to(config_dir / "projects")
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(jsonl, dest)
+        shutil.rmtree(root, ignore_errors=True)
 
     try:
         summary = json.loads(proc.stdout)
@@ -125,7 +141,7 @@ def main() -> int:
         print(proc.stderr[-4000:], file=sys.stderr)
         raise SystemExit(f"claude exited {proc.returncode} without a JSON result")
     reply = summary.pop("result", "") or ""
-    version = subprocess.run(["claude", "--version"], capture_output=True, text=True).stdout.strip()
+    version = subprocess.run([claude, "--version"], capture_output=True, text=True).stdout.strip()
     print(json.dumps({"event": "claude_code_summary", "claude_code": version, "exit": proc.returncode,
                       **summary}, default=str), file=sys.stderr)
     print(reply.strip())

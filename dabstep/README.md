@@ -1,6 +1,6 @@
 # dabstep: model × harness
 
-Four arms on the `dabstep` task (DABStep's questions, 25 cases: 5 easy, 20 hard),
+Seven arms on the `dabstep` task (DABStep's questions, 25 cases: 5 easy, 20 hard),
 built to separate what the model contributes from what the harness contributes,
 and what each costs.
 
@@ -20,14 +20,14 @@ their differences are the harness. mini-loop is DABStep's ReAct baseline
 shape: one `run_python` tool, at most 10 runs, then a final answer, with no
 planning, sub-agents or context management.
 
-The claude-code arms share [`claude_code.py`](claude_code.py) (the first one,
-`claude-code-deepseek-flash`, runs the same logic from its own `solution.py`).
-Each is set up the way its vendor documents Claude Code: Anthropic with the
+The four claude-code arms share [`claude_code.py`](claude_code.py). Each is
+set up the way its vendor documents Claude Code: Anthropic with the
 defaults (Claude Code's own small/fast model for side calls); Kimi per Kimi's
 guide (kimi-k3[1m] everywhere but the haiku slot, kimi-k2.7-code; effort max;
 a 1M auto-compact window); DeepSeek and GLM with every model slot pinned to the
-one model. A third-party key goes in `ANTHROPIC_AUTH_TOKEN` with
-`ANTHROPIC_API_KEY` blanked. GLM goes through OpenRouter, whose cached tokens
+one model. The Moonshot and OpenRouter keys go in `ANTHROPIC_AUTH_TOKEN` with
+`ANTHROPIC_API_KEY` blanked, as their guides say. DeepSeek's endpoint takes
+its key as `x-api-key`. GLM goes through OpenRouter, whose cached tokens
 the site cannot price yet, so its cost can show as unknown.
 
 ## Held fixed across arms
@@ -43,9 +43,25 @@ the site cannot price yet, so its cost can show as unknown.
   transcript at cache rates, and their cost difference, like their score
   difference, is the model's.
 - **Time.** Every arm gets 1800 seconds per case.
-- **No network beyond the model.** Web search and fetch are off, and every
-  HTTP(S) proxy variable points at a closed port for the harness and anything
-  it runs. Loopback, where the cost proxy listens, is exempt.
+- **The jail.** The machine that runs the arms also holds the answer key (the
+  private task repo, the DABStep download, the grader's packs, earlier runs).
+  So every model-driven process runs under macOS Seatbelt with a
+  deny-by-default profile, [`sandbox.py`](sandbox.py). That means all of
+  Claude Code, all of DSH, and mini-loop's snippet interpreter.
+  - **Reads:** the case copy, the harness's own install, and the system trees
+    (Homebrew's python3 and node included).
+  - **Writes:** only a fresh per-case root, which holds the case copy plus its
+    own `$HOME` and `$TMPDIR`.
+  - **Network:** one TCP port on loopback, the cost proxy; mini-loop's snippets
+    get no network at all.
+  - Everything else is unreadable because it is never allowed: the home
+    directory, `/tmp`, and every other case's scratch.
+  - Web search and fetch are also off, and the HTTP(S) proxy variables point at
+    a closed port.
+  - Commands a harness runs get no API key.
+  - DSH's own command sandbox limits writes but not reads, and macOS cannot
+    apply it inside the jail. It is off (`DSH_PERMISSION_MODE=danger-full-access`),
+    and each DSH case gets its own `DSH_HOME`.
 - **Python.** Code runs under the `python3` on PATH (pandas, numpy).
 - **No refusal fallback.** A fallback answers with a different model, so the arm
   would no longer be the model it names. mini-loop logs a refusal and its
@@ -55,7 +71,7 @@ the site cannot price yet, so its cost can show as unknown.
 ## Running an arm
 
 ```bash
-cp dabstep/.env.example dabstep/.env          # then fill in both keys
+cp dabstep/.env.example dabstep/.env          # then fill in the keys
 direnv allow dabstep dabstep/*/
 cd dabstep/mini-loop-claude-opus-5 && tp run --server https://uat.trapstreet.run
 ```
@@ -80,6 +96,40 @@ The task is graded on uat.trapstreet.run, so pass `--server
 https://uat.trapstreet.run` to send the answers there. Leave `TRAPSTREET_URL`
 unset: tp also reads its price table from that variable, and only the
 production table prices `deepseek-flash`.
+
+## Before a run, and before publishing it
+
+[`sandbox_canary.py`](sandbox_canary.py) is free and needs no key. It drives
+every arm's real harness with a fake model that tries to escape:
+
+- It reads a decoy answer file planted under `~/.cache`, and a file in a
+  sibling case, with every tool the harness has.
+- It lists the home directory, `~/.cache`, `~/.config`, `/tmp` and `$TMPDIR`.
+- It connects to the internet and to a loopback port that is not the proxy.
+
+It passes only if all of that is refused, the case itself still works (the
+files, pandas, the proxy), no decoy token reaches the model, and a transcript
+was kept. Run it after any change to an arm, adding `--secret PATH` for
+anything else on the machine that must stay out of reach:
+
+```bash
+python3 dabstep/sandbox_canary.py --secret ~/path/to/private/answers
+```
+
+Every case keeps its transcript in the run's `solution/outputs`:
+
+- Claude Code's session JSONL, sub-agents included;
+- DSH's `session.v3.jsonl.zstd`;
+- mini-loop's `transcript.json`.
+
+[`audit_transcripts.py`](audit_transcripts.py) reads them and flags any tool
+call that reaches outside the case, touches the network, reads the
+environment, or goes looking for the answer key, and anything the jail refused.
+Read the flags before publishing:
+
+```bash
+uv run dabstep/audit_transcripts.py --arm dabstep/claude-code-kimi-k3
+```
 
 ## Reading the cost
 

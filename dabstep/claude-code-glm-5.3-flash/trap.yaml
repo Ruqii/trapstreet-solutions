@@ -7,7 +7,7 @@ profile:
     Claude Code as shipped (not --bare), headless, on OpenRouter's
     Anthropic-format endpoint (OpenRouter's Claude Code guide), every model
     slot pinned to z-ai/glm-5.3-flash. Fresh config dir per case,
-    WebSearch/WebFetch disallowed, no network. Cost shows as unknown on cases
+    WebSearch/WebFetch disallowed, run in a jail that reads only the case copy and reaches only the cost proxy. Cost shows as unknown on cases
     that hit OpenRouter's cache until the site serves cache prices.
 timeout: 1800
 tasks:

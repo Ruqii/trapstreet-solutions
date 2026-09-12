@@ -6,8 +6,10 @@ profile:
   notes: >-
     Stock DeepSeek Harness, headless profile, zero plugins, its default model
     (deepseek-flash, thinking on at effort high). dsh 0.1.5-rc.1 with every
-    sub-package pinned by package-lock.json. Web search and all other
-    outbound HTTP blocked; model calls go through the cost proxy.
+    sub-package pinned by package-lock.json. Runs in a jail that reads only
+    the case copy and reaches only the cost proxy, with a fresh DSH_HOME per
+    case; DSH's own command sandbox is off (DSH_PERMISSION_MODE) because macOS
+    cannot nest one inside the jail. Web search and fetch fail.
 timeout: 1800
 tasks:
   dabstep:

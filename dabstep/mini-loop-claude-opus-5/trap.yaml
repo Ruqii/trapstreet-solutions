@@ -8,7 +8,7 @@ profile:
     answer; no planning, sub-agents or context management (DABStep's ReAct
     baseline shape). Runs the same ../mini_loop.py as
     mini-loop + deepseek-flash, so only the model differs. Thinking at the
-    vendor default; no refusal fallback; no network.
+    vendor default; no refusal fallback; snippets run in a jail that reads only the case copy, with no network.
 timeout: 1800
 tasks:
   dabstep:

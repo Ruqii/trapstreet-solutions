@@ -7,7 +7,7 @@ profile:
     Claude Code as shipped (not --bare), headless, on Anthropic's API with its
     default setup: claude-opus-5 as the main model, Claude Code's own
     small/fast model for side calls. Fresh config dir per case,
-    WebSearch/WebFetch disallowed, no network.
+    WebSearch/WebFetch disallowed, run in a jail that reads only the case copy and reaches only the cost proxy.
 timeout: 1800
 tasks:
   dabstep:

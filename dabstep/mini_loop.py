@@ -25,8 +25,12 @@ model's, not the harness's.
   longer be the model it names. A refusal is logged to stderr with its
   category and the case ends with no ANSWER line.
 - The snippets run with the same `python3` Claude Code and DSH would find on
-  PATH, with no network (proxy variables point at a closed port) and no API
+  PATH, in ../sandbox.py's jail: they read the case copy and the system trees,
+  write only the case root, open no network connection at all, and get no API
   keys in their environment.
+- The whole conversation (every snippet and what it printed) is kept in the
+  case's outputs_dir as transcript.json, for auditing before a run is
+  published.
 
 stdout carries only the model's final reply; everything else goes to stderr.
 """
@@ -38,8 +42,9 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
+
+import sandbox
 
 MAX_ROUNDS = 10
 CODE_TIMEOUT_S = 120
@@ -98,11 +103,22 @@ def sandbox_env() -> dict[str, str]:
     return env
 
 
-def run_python(code: str, workdir: Path, python: str, env: dict[str, str], n: int) -> str:
+def interpreter_roots(python: str) -> list[Path]:
+    """Where the snippet interpreter is installed (bin/ up one, the root up two),
+    for the symlink and its target alike, so the jail can read it wherever it is."""
+    return sorted({Path(p).parent.parent for p in (python, os.path.realpath(python))})
+
+
+def jailed(cmd: list[str], root: Path, python: str) -> list[str]:
+    return sandbox.wrap(cmd, root=root, readable=interpreter_roots(python), port=None)
+
+
+def run_python(code: str, root: Path, python: str, env: dict[str, str], n: int) -> str:
+    workdir = root / "work"
     script = workdir / f".run_{n:02d}.py"
     script.write_text(code)
     try:
-        proc = subprocess.run([python, script.name], cwd=workdir, env=env,
+        proc = subprocess.run(jailed([python, script.name], root, python), cwd=workdir, env=env,
                               capture_output=True, text=True, timeout=CODE_TIMEOUT_S)
         out = proc.stdout + (f"\n[stderr]\n{proc.stderr}" if proc.stderr else "")
         if proc.returncode:
@@ -235,15 +251,20 @@ def main() -> int:
     args = parser.parse_args()
     check_metering(args.api, args.model)
 
-    inputs = Path(json.loads(os.environ["TRAP_MANIFEST"])["inputs_dir"])
+    manifest = json.loads(os.environ["TRAP_MANIFEST"])
+    inputs, outputs = Path(manifest["inputs_dir"]), Path(manifest["outputs_dir"])
     question = (inputs / "question.txt").read_text()
-    workdir = Path(tempfile.mkdtemp(prefix="dabstep-loop-"))
-    shutil.copytree(inputs, workdir, dirs_exist_ok=True)  # follows the symlinks: real copies
-    python, env = analysis_python(), sandbox_env()
-    versions = subprocess.run([python, "-c", "import sys,pandas,numpy;print(sys.version.split()[0],"
-                               "'pandas',pandas.__version__,'numpy',numpy.__version__)"],
-                              env=env, capture_output=True, text=True).stdout.strip()
-    log("start", api=args.api, model=args.model, python=python, versions=versions, workdir=str(workdir))
+    root = sandbox.new_case_root("dabstep-loop-")
+    shutil.copytree(inputs, root / "work", dirs_exist_ok=True)  # follows the symlinks: real copies
+    python = analysis_python()
+    env = sandbox.jail_env(sandbox_env(), root)
+    versions = subprocess.run(jailed([python, "-c", "import sys,pandas,numpy;print(sys.version.split()[0],"
+                                      "'pandas',pandas.__version__,'numpy',numpy.__version__)"], root, python),
+                              cwd=root / "work", env=env, capture_output=True, text=True)
+    if versions.returncode:
+        raise SystemExit(f"python3 does not start in the jail: {versions.stderr[-2000:]}")
+    log("start", api=args.api, model=args.model, python=python, versions=versions.stdout.strip(),
+        root=str(root))
 
     llm = Anthropic(args.model) if args.api == "anthropic" else DeepSeek(args.model)
     messages = llm.start(question)
@@ -258,13 +279,16 @@ def main() -> int:
             for call_id, code in calls:
                 if rounds < MAX_ROUNDS:
                     rounds += 1
-                    results.append((call_id, run_python(code, workdir, python, env, rounds)))
+                    results.append((call_id, run_python(code, root, python, env, rounds)))
                 else:
                     results.append((call_id, "[not run: no runs left]"))
             forced = rounds >= MAX_ROUNDS
             llm.answer_tools(messages, results, LAST_CALL if forced else None)
     finally:
-        shutil.rmtree(workdir, ignore_errors=True)
+        outputs.mkdir(parents=True, exist_ok=True)
+        (outputs / "transcript.json").write_text(json.dumps(
+            messages, indent=1, default=lambda o: o.model_dump() if hasattr(o, "model_dump") else str(o)))
+        shutil.rmtree(root, ignore_errors=True)
 
     if refusal:
         log("refusal", category=refusal)

@@ -1,13 +1,14 @@
 name: claude-code + deepseek-flash
-cmd: python3 solution.py
+cmd: python3 ../claude_code.py --model deepseek-flash --key-env DEEPSEEK_API_KEY --all-slots
 profile:
   model: deepseek-flash
   framework: claude-code
   notes: >-
     Claude Code as shipped (not --bare), headless, on DeepSeek's
     Anthropic-format endpoint; every model slot set to deepseek-flash. Fresh
-    config dir per case, WebSearch/WebFetch disallowed, no network. Its .envrc
-    sets the upstream the cost proxy forwards to.
+    config dir per case, WebSearch/WebFetch disallowed, run in a jail that
+    reads only the case copy and reaches only the cost proxy. Its .envrc sets
+    the upstream the cost proxy forwards to.
 timeout: 1800
 tasks:
   dabstep:

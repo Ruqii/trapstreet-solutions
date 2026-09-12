@@ -8,7 +8,7 @@ profile:
     Anthropic-format endpoint, set up as Kimi's own Claude Code guide says:
     kimi-k3[1m] in every slot except the haiku slot (kimi-k2.7-code), effort
     max, a 1M auto-compact window. Fresh config dir per case,
-    WebSearch/WebFetch disallowed, no network.
+    WebSearch/WebFetch disallowed, run in a jail that reads only the case copy and reaches only the cost proxy.
 timeout: 1800
 tasks:
   dabstep:
