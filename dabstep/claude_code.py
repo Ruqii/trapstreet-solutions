@@ -50,7 +50,9 @@ from pathlib import Path
 
 import sandbox
 
-TIMEOUT_S = 1700  # under trap.yaml's timeout, so a slow case still reports
+# Under trap.yaml's 1800 s: tp SIGKILLs a case there, which no cleanup survives.
+# DABSTEP_DEADLINE_S is for sandbox_canary.py's timeout check.
+TIMEOUT_S = int(os.environ.get("DABSTEP_DEADLINE_S", 1700))
 DEAD_PROXY = "http://127.0.0.1:9"
 # Shell access is the read-only data toolkit a person would reach for (no rm, no
 # installs, no network).
@@ -124,9 +126,16 @@ def main() -> int:
         "--allowedTools", TOOLS,
         "--disallowedTools", "WebSearch WebFetch",
     ]
-    cmd = sandbox.wrap(cmd, root=root, readable=[Path(claude)], port=sandbox.proxy_port(proxy))
+    port = sandbox.proxy_port(proxy)
+    cmd = sandbox.wrap(cmd, root=root, readable=[Path(claude)], port=port)
+    sandbox.attest(root=root, readable=[Path(claude)], port=port)
+    # tp stops a case at trap.yaml's 1800 s with SIGKILL, which no cleanup
+    # survives; stopping Claude Code at TIMEOUT_S keeps its transcript.
     try:
         proc = subprocess.run(cmd, cwd=workdir, env=env, capture_output=True, text=True, timeout=TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        proc = None
+        print(json.dumps({"event": "timeout", "after_s": TIMEOUT_S}), file=sys.stderr)
     finally:
         keep = outputs / "transcripts"
         for jsonl in (config_dir / "projects").rglob("*.jsonl"):  # the session and any sub-agents'
@@ -135,6 +144,8 @@ def main() -> int:
             shutil.copy2(jsonl, dest)
         shutil.rmtree(root, ignore_errors=True)
 
+    if proc is None:
+        return 124  # tp's own code for a timed-out case
     try:
         summary = json.loads(proc.stdout)
     except json.JSONDecodeError:

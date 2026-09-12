@@ -40,6 +40,7 @@ import argparse
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -50,6 +51,9 @@ MAX_ROUNDS = 10
 CODE_TIMEOUT_S = 120
 OUTPUT_CAP = 10_000  # characters of stdout+stderr returned per snippet
 MAX_TOKENS = 32_000
+# tp SIGKILLs a case at trap.yaml's 1800 s, which no cleanup survives: stop first and keep the
+# transcript. DABSTEP_DEADLINE_S is for sandbox_canary.py's timeout check.
+DEADLINE_S = int(os.environ.get("DABSTEP_DEADLINE_S", 1700))
 DEAD_PROXY = "http://127.0.0.1:9"
 
 SYSTEM = (
@@ -73,6 +77,11 @@ LAST_CALL = (
     f"You have used all {MAX_ROUNDS} runs of run_python. Give your final answer now, "
     "from what you have seen, ending with the ANSWER line."
 )
+
+
+class OutOfTime(BaseException):
+    """DEADLINE_S passed. A BaseException, so the SDKs' retry loops (which catch
+    Exception) let it through instead of retrying."""
 
 
 def log(event: str, **fields) -> None:
@@ -263,6 +272,12 @@ def main() -> int:
                               cwd=root / "work", env=env, capture_output=True, text=True)
     if versions.returncode:
         raise SystemExit(f"python3 does not start in the jail: {versions.stderr[-2000:]}")
+    sandbox.attest(root=root, readable=interpreter_roots(python), port=None)
+
+    def out_of_time(*_):
+        raise OutOfTime()
+    signal.signal(signal.SIGALRM, out_of_time)
+    signal.alarm(DEADLINE_S)
     log("start", api=args.api, model=args.model, python=python, versions=versions.stdout.strip(),
         root=str(root))
 
@@ -284,10 +299,15 @@ def main() -> int:
                     results.append((call_id, "[not run: no runs left]"))
             forced = rounds >= MAX_ROUNDS
             llm.answer_tools(messages, results, LAST_CALL if forced else None)
+    except OutOfTime:
+        log("timeout", after_s=DEADLINE_S, rounds=rounds)
+        return 124  # tp's own code for a timed-out case
     finally:
+        signal.alarm(0)
         outputs.mkdir(parents=True, exist_ok=True)
         (outputs / "transcript.json").write_text(json.dumps(
-            messages, indent=1, default=lambda o: o.model_dump() if hasattr(o, "model_dump") else str(o)))
+            {"root": str(root), "messages": messages}, indent=1,
+            default=lambda o: o.model_dump() if hasattr(o, "model_dump") else str(o)))
         shutil.rmtree(root, ignore_errors=True)
 
     if refusal:

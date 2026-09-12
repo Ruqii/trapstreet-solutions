@@ -114,9 +114,17 @@ anything else on the machine that must stay out of reach:
 
 ```bash
 python3 dabstep/sandbox_canary.py --secret ~/path/to/private/answers
+python3 dabstep/sandbox_canary.py --deadline 25
 ```
 
-Every case keeps its transcript in the run's `solution/outputs`:
+The second command checks timeouts. tp stops a case at 1800 s with SIGKILL,
+which no cleanup survives, so each harness stops itself at 1700 s and still
+copies its transcript out. With `--deadline 25` the fake model goes quiet, and
+each harness must stop at 25 s with exit 124 and its transcript kept.
+
+Each case writes a `jail` line to the stderr tp keeps: the sandbox, the case
+root, the one allowed port and the profile's hash. Every case also keeps its
+transcript in the run's `solution/outputs`:
 
 - Claude Code's session JSONL, sub-agents included;
 - DSH's `session.v3.jsonl.zstd`;
@@ -125,7 +133,8 @@ Every case keeps its transcript in the run's `solution/outputs`:
 [`audit_transcripts.py`](audit_transcripts.py) reads them and flags any tool
 call that reaches outside the case, touches the network, reads the
 environment, or goes looking for the answer key, and anything the jail refused.
-Read the flags before publishing:
+It also flags any case with no jail line or no transcript. Read the flags
+before publishing:
 
 ```bash
 uv run dabstep/audit_transcripts.py --arm dabstep/claude-code-kimi-k3

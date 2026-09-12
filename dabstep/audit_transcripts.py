@@ -19,6 +19,7 @@ session.v3.jsonl.zstd, mini-loop's transcript.json -- and flags:
   refused  a tool result saying the jail or the harness refused something
            (Operation not permitted, EPERM, was blocked, Permission denied)
   missing  a case with no transcript at all (unauditable)
+  unjailed a case whose stderr lacks sandbox.py's jail line
 
 A flag is a pointer, not a verdict: read the lines it prints. Exit status 1
 when anything is flagged.
@@ -98,7 +99,8 @@ def dsh(path: Path):
 
 
 def mini_loop(path: Path):
-    messages = json.loads(path.read_text())
+    data = json.loads(path.read_text())
+    messages, root = (data["messages"], data.get("root")) if isinstance(data, dict) else (data, None)
     calls = {}
     for m in messages:
         content = m.get("content")
@@ -113,7 +115,7 @@ def mini_loop(path: Path):
                 elif block.get("type") == "tool_result" and block.get("tool_use_id") in calls:
                     calls[block["tool_use_id"]][2] = str(block.get("content"))
     for name, call, result in calls.values():
-        yield name, call, result, None
+        yield name, call, result, f"{root}/work" if root else None
 
 
 def transcripts(outputs: Path):
@@ -133,12 +135,28 @@ def case_root(cwd: str | None) -> str | None:
     return cwd.rsplit("/", 1)[0] if cwd.endswith("/work") else cwd
 
 
+def jailed(case: Path) -> bool:
+    """The harness said, on the stderr tp keeps, that this case ran in the jail."""
+    stderr = case / "solution" / "stderr"
+    if not stderr.exists():
+        return False
+    for line in stderr.read_text(errors="replace").splitlines():
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(ev, dict) and ev.get("event") == "jail" and ev.get("sandbox") == "sandbox-exec":
+            return True
+    return False
+
+
 def audit_case(case: Path) -> list[str]:
     outputs = case / "solution" / "outputs"
     found = list(transcripts(outputs)) if outputs.exists() else []
+    head = [] if jailed(case) else ["unjailed no jail line in solution/stderr: this case was not run in sandbox.py"]
     if not found:
-        return ["missing  no transcript in solution/outputs"]
-    flags, n = [], 0
+        return head + ["missing  no transcript in solution/outputs"]
+    flags, n = head, 0
     for path, reader in found:
         for name, call, result, cwd in reader(path):
             n += 1

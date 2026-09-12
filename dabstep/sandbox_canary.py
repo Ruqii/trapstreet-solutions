@@ -25,6 +25,9 @@ calls a real API.
 
 With --keep, each arm's transcript is saved in tp's run layout, so
 audit_transcripts.py can be checked against it: it must flag every probe.
+With --deadline S, the fake model goes quiet after the first tool call, and
+each harness must stop itself at S seconds (as it does at 1700 s before tp's
+SIGKILL at 1800 s) with exit 124, its jail line and its transcript.
 """
 from __future__ import annotations
 
@@ -40,6 +43,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from pathlib import Path
 
 import sandbox
@@ -152,8 +156,8 @@ def script_for(arm: str, decoy: Path, sibling: Path, code: str) -> list[tuple[st
 class Fake:
     """A model API that plays `steps` as tool calls, then answers."""
 
-    def __init__(self, steps: list[tuple[str, dict]]):
-        self.steps, self.bodies, self.results = steps, [], {}
+    def __init__(self, steps: list[tuple[str, dict]], stall_s: float = 0):
+        self.steps, self.bodies, self.results, self.stall_s = steps, [], {}, stall_s
         fake = self
 
         class H(http.server.BaseHTTPRequestHandler):
@@ -185,6 +189,8 @@ class Fake:
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
 
     def next_step(self, n_results: int):
+        if self.stall_s and n_results >= 1:  # --deadline: go quiet after the first tool call
+            time.sleep(self.stall_s)
         return self.steps[n_results] if n_results < len(self.steps) else None
 
     # -- Anthropic Messages --
@@ -262,19 +268,38 @@ def other_loopback_port() -> int:
 
 
 def check(arm: str, case: Path, forbid: dict[str, str], decoy: Path, sibling: Path, tokens: list[str],
-          other_port: int, keep: Path | None) -> bool:
+          other_port: int, keep: Path | None, deadline: int | None = None) -> bool:
     api, url_env, key_env, fake_key = ARMS[arm]
     outputs = Path(tempfile.mkdtemp(prefix="dabstep-canary-out-"))
     # the probe needs the fake model's port, which exists only once it listens
-    fake = Fake([])
+    fake = Fake([], stall_s=3 * deadline if deadline else 0)
     fake.steps = script_for(arm, decoy, sibling, probe_code(forbid, other_port, fake.port))
     cmd = shlex.split(__import__("yaml").safe_load(open(HERE / arm / "trap.yaml"))["cmd"])
     env = {k: v for k, v in os.environ.items()
            if not k.endswith(("_API_KEY", "_AUTH_TOKEN", "_BASE_URL")) and not k.startswith(("CLAUDE", "TRAP"))}
     env.update({url_env: f"http://127.0.0.1:{fake.port}", key_env: fake_key,
                 "TRAP_MANIFEST": json.dumps({"inputs_dir": str(case), "outputs_dir": str(outputs)})})
+    if deadline:
+        env["DABSTEP_DEADLINE_S"] = str(deadline)
+    t0 = time.monotonic()
     proc = subprocess.run(cmd, cwd=HERE / arm, env=env, capture_output=True, text=True, timeout=900)
+    took = time.monotonic() - t0
     fake.server.shutdown()
+    kept = [p for p in outputs.rglob("*") if p.is_file()]
+    jail_line = '"event": "jail"' in proc.stderr
+    if keep:  # in tp's layout, for audit_transcripts.py
+        shutil.copytree(outputs, keep / arm / case.name / "solution" / "outputs", dirs_exist_ok=True)
+        (keep / arm / case.name / "solution" / "stderr").write_text(proc.stderr)
+
+    if deadline:  # the harness must stop itself and still leave its transcript
+        ok = proc.returncode == 124 and bool(kept) and jail_line and took < deadline + 60
+        print(f"== {arm} (deadline {deadline}s): {'ok' if ok else 'FAIL'} exit {proc.returncode}, "
+              f"stopped after {took:.0f}s, jail line {jail_line}, "
+              f"kept {[str(p.relative_to(outputs)) for p in kept][:2]}", flush=True)
+        if not ok:
+            print("   stderr tail: " + proc.stderr[-800:])
+        shutil.rmtree(outputs, ignore_errors=True)
+        return ok
 
     ok = True
     lines = [f"== {arm}: exit {proc.returncode}, stdout {proc.stdout.strip()[-40:]!r}"]
@@ -286,6 +311,8 @@ def check(arm: str, case: Path, forbid: dict[str, str], decoy: Path, sibling: Pa
 
     if proc.returncode:
         fail("harness exited non-zero; stderr tail:\n" + proc.stderr[-1500:])
+    if not jail_line:
+        fail("no jail line on stderr")
     sent = "\n".join(fake.bodies)
     for t in tokens:
         if t in sent:
@@ -317,12 +344,9 @@ def check(arm: str, case: Path, forbid: dict[str, str], decoy: Path, sibling: Pa
                          f"{' '.join(text.split())[:110]!r}")
     if "ROWS 138236" not in sent:
         fail("pandas never read payments.csv")
-    kept = [p for p in outputs.rglob("*") if p.is_file()]
     if not kept:
         fail("no transcript in outputs_dir")
     lines.append(f"   kept: {[str(p.relative_to(outputs)) for p in kept][:4]}")
-    if keep:  # in tp's layout, for audit_transcripts.py
-        shutil.copytree(outputs, keep / arm / case.name / "solution" / "outputs", dirs_exist_ok=True)
     shutil.rmtree(outputs, ignore_errors=True)
     print("\n".join(lines), flush=True)
     return ok
@@ -334,6 +358,8 @@ def main() -> int:
     parser.add_argument("--secret", action="append", default=[], help="another path that must be unreadable")
     parser.add_argument("--case", type=Path, default=DEFAULT_CASE)
     parser.add_argument("--keep", type=Path, help="save each arm's outputs here, in tp's run layout")
+    parser.add_argument("--deadline", type=int, help="instead: shrink the harness deadline to this many "
+                        "seconds, stall the fake model, and check the harness stops itself and keeps its transcript")
     args = parser.parse_args()
 
     tokens = ["CANARY-" + secrets.token_hex(12), "SIBLING-" + secrets.token_hex(12)]
@@ -355,7 +381,7 @@ def main() -> int:
     forbid = {k: str(v) for k, v in forbid.items()}
     other = other_loopback_port()
     try:
-        results = [check(arm, args.case, forbid, decoy, sibling, tokens, other, args.keep) for arm in args.arm or ARMS]
+        results = [check(arm, args.case, forbid, decoy, sibling, tokens, other, args.keep, args.deadline) for arm in args.arm or ARMS]
     finally:
         shutil.rmtree(decoy_dir, ignore_errors=True)
         shutil.rmtree(sibling_root, ignore_errors=True)

@@ -58,7 +58,12 @@ m = json.loads(os.environ["TRAP_MANIFEST"])
 print(m["inputs_dir"], m["outputs_dir"], sandbox.proxy_port(os.environ["DEEPSEEK_BASE_URL"]), sep="\n")' "$HERE/..")
 [ -n "${PORT:-}" ] || exit 1
 ROOT=$(cd "$(mktemp -d "$TMP/dabstep-dsh.XXXXXXXX")" && pwd -P)
-trap 'rm -rf "$ROOT"' EXIT INT TERM
+keep() {  # the session log, for audit_transcripts.py
+    [ -d "$ROOT/dsh-home/sessions" ] && mkdir -p "$OUTPUTS/transcripts" \
+        && cp -R "$ROOT/dsh-home/sessions"/. "$OUTPUTS/transcripts"/
+}
+trap 'keep; rm -rf "$ROOT"' EXIT
+trap 'exit 143' INT TERM
 mkdir -p "$ROOT/work" "$ROOT/home" "$ROOT/tmp"
 cp -RL "$INPUTS"/. "$ROOT/work"/
 cp -R "$TEMPLATE" "$ROOT/dsh-home"
@@ -78,11 +83,9 @@ export HTTP_PROXY=http://127.0.0.1:9 HTTPS_PROXY=http://127.0.0.1:9 ALL_PROXY=ht
 export http_proxy=http://127.0.0.1:9 https_proxy=http://127.0.0.1:9
 unset NO_PROXY no_proxy
 
+# tp stops a case at trap.yaml's 1800 s with SIGKILL, which no cleanup survives;
+# stop DSH first, 1700 s from the start of this script, so the session log is
+# still copied out. (DABSTEP_DEADLINE_S is for sandbox_canary.py's timeout check.)
 cd "$ROOT/work" || exit 1
-python3 "$SANDBOX" --root "$ROOT" --ro "$PREFIX" --ro "$TEMPLATE" --port "$PORT" -- \
-    "$DSH" --profile headless "$PROMPT"
-STATUS=$?
-if [ -d "$DSH_HOME/sessions" ]; then
-    mkdir -p "$OUTPUTS/transcripts" && cp -R "$DSH_HOME/sessions"/. "$OUTPUTS/transcripts"/
-fi
-exit $STATUS
+python3 "$SANDBOX" --root "$ROOT" --ro "$PREFIX" --ro "$TEMPLATE" --port "$PORT" \
+    --timeout $(( ${DABSTEP_DEADLINE_S:-1700} - SECONDS )) -- "$DSH" --profile headless "$PROMPT"

@@ -23,14 +23,18 @@ What a jailed process gets:
 
 Usage from Python: `new_case_root()`, then `wrap(cmd, root=..., port=...)` and
 `jail_env(env, root)`. From a shell (which also
-applies jail_env):
-    python3 sandbox.py --root DIR [--ro DIR]... [--port N] -- cmd args...
+applies jail_env, attests, and can stop the command after --timeout seconds):
+    python3 sandbox.py --root DIR [--ro DIR]... [--port N] [--timeout S] -- cmd args...
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import shutil
+import signal
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -130,11 +134,42 @@ def wrap(cmd: list[str], *, root: Path, readable: list[Path] = (), port: int | N
     return [exe, "-p", profile(root=root, readable=list(readable), port=port), *cmd]
 
 
+def attest(*, root: Path, readable: list[Path] = (), port: int | None = None) -> None:
+    """Say on stderr, which tp keeps per case, that this case ran jailed and how.
+    audit_transcripts.py refuses a case without this line."""
+    text = profile(root=root, readable=list(readable), port=port)
+    print(json.dumps({"event": "jail", "sandbox": "sandbox-exec", "root": str(root), "port": port,
+                      "readable": [str(p) for p in readable],
+                      "profile_sha256": hashlib.sha256(text.encode()).hexdigest()}),
+          file=sys.stderr, flush=True)
+
+
+def supervise(argv: list[str], env: dict[str, str], timeout: float | None) -> int:
+    """Run `argv` and return its exit status, stopping it at `timeout` seconds
+    (TERM, then KILL) and passing on a TERM this process receives. tp enforces
+    its own timeout with SIGKILL, which no cleanup survives, so a harness has to
+    stop itself first to keep its transcript."""
+    child = subprocess.Popen(argv, env=env)
+    signal.signal(signal.SIGTERM, lambda *_: child.terminate())
+    try:
+        return child.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        print(json.dumps({"event": "timeout", "after_s": timeout}), file=sys.stderr, flush=True)
+        child.terminate()
+        try:
+            child.wait(timeout=20)
+        except subprocess.TimeoutExpired:
+            child.kill()
+            child.wait()
+        return 124
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="run a command in the dabstep jail")
     parser.add_argument("--root", required=True, type=Path, help="the per-case root (read-write)")
     parser.add_argument("--ro", action="append", default=[], type=Path, help="an extra read-only tree")
     parser.add_argument("--port", type=int, help="the one loopback port the command may connect to")
+    parser.add_argument("--timeout", type=float, help="stop the command after this many seconds")
     parser.add_argument("cmd", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     cmd = args.cmd[1:] if args.cmd[:1] == ["--"] else args.cmd
@@ -142,7 +177,8 @@ def main() -> int:
         parser.error("no command")
     root = Path(os.path.realpath(args.root))
     argv = wrap(cmd, root=root, readable=args.ro, port=args.port)
-    os.execve(argv[0], argv, jail_env(dict(os.environ), root))
+    attest(root=root, readable=args.ro, port=args.port)
+    return supervise(argv, jail_env(dict(os.environ), root), args.timeout)
 
 
 if __name__ == "__main__":
