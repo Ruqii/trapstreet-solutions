@@ -58,7 +58,10 @@ the site cannot price yet, so its cost can show as unknown.
     directory, `/tmp`, and every other case's scratch.
   - Web search and fetch are also off, and the HTTP(S) proxy variables point at
     a closed port.
-  - Commands a harness runs get no API key.
+  - Commands a harness runs get no API key, and no environment variable
+    that names a place on this machine: no tp or direnv variables, and
+    nothing under the home directory, which includes Claude Code's own
+    binary. Claude Code runs from a copy under `$TMPDIR`.
   - DSH's own command sandbox limits writes but not reads, and macOS cannot
     apply it inside the jail. It is off (`DSH_PERMISSION_MODE=danger-full-access`),
     and each DSH case gets its own `DSH_HOME`.
@@ -118,9 +121,13 @@ python3 dabstep/sandbox_canary.py --deadline 25
 ```
 
 The second command checks timeouts. tp stops a case at 1800 s with SIGKILL,
-which no cleanup survives, so each harness stops itself at 1700 s and still
-copies its transcript out. With `--deadline 25` the fake model goes quiet, and
-each harness must stop at 25 s with exit 124 and its transcript kept.
+which no cleanup survives, so each harness stops itself at 1700 s and copies
+its transcript out. Its whole reply is then `(no reply: stopped at the time
+limit)`, with exit 0, so the site grades the case as not answered and the run
+still finishes. A non-zero exit would leave the case pending as
+`SOLVER_ERRORED`, and the run would never be scored. With `--deadline 25` the
+fake model goes quiet, and each harness must stop at 25 s with that reply and
+its transcript kept.
 
 Each case writes a `jail` line to the stderr tp keeps: the sandbox, the case
 root, the one allowed port and the profile's hash. Every case also keeps its

@@ -32,6 +32,7 @@ import argparse
 import hashlib
 import json
 import os
+import pwd
 import shutil
 import signal
 import subprocess
@@ -49,6 +50,12 @@ SYSTEM_READ_PATHS = (
 #: Single paths, stat-able and traversable but not listable. "/" and "/var" are
 #: load-bearing (the loader; the timezone database) -- see apps/grader.
 SYSTEM_READ_LITERALS = ("/", "/etc", "/var", "/dev/null")
+#: What a harness prints, as its whole reply, when it stops itself at its deadline.
+#: tp sends the reply as the case's answer, so the site grades the case as not
+#: answered (0) and the run still finishes. A non-zero exit would be recorded as
+#: SOLVER_ERRORED instead: the case would stay pending and the run would never be
+#: scored. Deliberately free of "answer:", which the judge would try to read.
+NO_REPLY = "(no reply: stopped at the time limit)"
 #: Binaries that would run something outside the jail on the jail's behalf.
 NO_EXEC = ("/usr/bin/open", "/usr/bin/osascript", "/usr/bin/security",
            "/usr/bin/pbpaste", "/usr/bin/pbcopy", "/usr/bin/sudo")
@@ -111,8 +118,25 @@ def new_case_root(prefix: str = "dabstep-case-") -> Path:
 
 
 def jail_env(env: dict[str, str], root: Path) -> dict[str, str]:
-    """`env` with $HOME and every temp-dir variable pointed inside the case root."""
-    out = dict(env)
+    """`env` with $HOME and every temp-dir variable pointed inside the case root, and
+    nothing that names a place on this machine outside it.
+
+    The jail makes those places unreadable; this keeps an agent from learning
+    where they are. A jailed DSH read TRAP_MANIFEST (the task checkout) and
+    DIRENV_DIR (the arm's directory) from its environment and went looking there.
+    So: no TRAP_* or DIRENV_* variables, no variable whose value mentions the real
+    home directory, and no PATH entries under it.
+    """
+    homes = {h for h in (env.get("HOME"), pwd.getpwuid(os.getuid()).pw_dir) if h}
+    homes |= {os.path.realpath(h) for h in homes}
+
+    def names_home(value: str) -> bool:
+        return any(h in value for h in homes)
+
+    out = {k: v for k, v in env.items()
+           if not k.startswith(("TRAP", "DIRENV_")) and k not in ("PWD", "OLDPWD") and not names_home(v)}
+    if "PATH" in env:
+        out["PATH"] = os.pathsep.join(p for p in env["PATH"].split(os.pathsep) if p and not names_home(p))
     out.update(HOME=str(root / "home"), TMPDIR=str(root / "tmp") + "/", TMP=str(root / "tmp"),
                TEMP=str(root / "tmp"), XDG_CONFIG_HOME=str(root / "home/.config"),
                XDG_CACHE_HOME=str(root / "home/.cache"), XDG_DATA_HOME=str(root / "home/.local/share"),
@@ -144,15 +168,15 @@ def attest(*, root: Path, readable: list[Path] = (), port: int | None = None) ->
           file=sys.stderr, flush=True)
 
 
-def supervise(argv: list[str], env: dict[str, str], timeout: float | None) -> int:
-    """Run `argv` and return its exit status, stopping it at `timeout` seconds
-    (TERM, then KILL) and passing on a TERM this process receives. tp enforces
-    its own timeout with SIGKILL, which no cleanup survives, so a harness has to
-    stop itself first to keep its transcript."""
+def supervise(argv: list[str], env: dict[str, str], timeout: float | None) -> tuple[int, bool]:
+    """Run `argv`; return its exit status and whether it was stopped at `timeout`
+    seconds (TERM, then KILL). A TERM this process receives is passed on. tp
+    enforces its own timeout with SIGKILL, which no cleanup survives, so a harness
+    has to stop itself first to keep its transcript."""
     child = subprocess.Popen(argv, env=env)
     signal.signal(signal.SIGTERM, lambda *_: child.terminate())
     try:
-        return child.wait(timeout=timeout)
+        return child.wait(timeout=timeout), False
     except subprocess.TimeoutExpired:
         print(json.dumps({"event": "timeout", "after_s": timeout}), file=sys.stderr, flush=True)
         child.terminate()
@@ -161,7 +185,7 @@ def supervise(argv: list[str], env: dict[str, str], timeout: float | None) -> in
         except subprocess.TimeoutExpired:
             child.kill()
             child.wait()
-        return 124
+        return 124, True
 
 
 def main() -> int:
@@ -178,7 +202,11 @@ def main() -> int:
     root = Path(os.path.realpath(args.root))
     argv = wrap(cmd, root=root, readable=args.ro, port=args.port)
     attest(root=root, readable=args.ro, port=args.port)
-    return supervise(argv, jail_env(dict(os.environ), root), args.timeout)
+    status, timed_out = supervise(argv, jail_env(dict(os.environ), root), args.timeout)
+    if timed_out:  # graded as not answered, and the run still finishes; see NO_REPLY
+        print(NO_REPLY, flush=True)
+        return 0
+    return status
 
 
 if __name__ == "__main__":

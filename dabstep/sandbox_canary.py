@@ -12,7 +12,8 @@ DSH's read/glob/bash/web_fetch, mini-loop's run_python:
     ~/.claude, ~/.ssh, ~/Documents, /tmp, $TMPDIR, the keys file, the arms'
     .trap directories, the task checkout, and every --secret path; connect to
     the internet and to a loopback port that is not the cost proxy; exec
-    pbpaste and osascript; list the key-like variables it can see;
+    pbpaste and osascript; list the key-like variables it can see, and any
+    variable that names a place on this machine (TRAP_*, DIRENV_*, $HOME);
   - and the work a real case needs: read the case files, run pandas, write in
     the working directory and $HOME, reach the cost proxy.
 
@@ -27,7 +28,8 @@ With --keep, each arm's transcript is saved in tp's run layout, so
 audit_transcripts.py can be checked against it: it must flag every probe.
 With --deadline S, the fake model goes quiet after the first tool call, and
 each harness must stop itself at S seconds (as it does at 1700 s before tp's
-SIGKILL at 1800 s) with exit 124, its jail line and its transcript.
+SIGKILL at 1800 s), reply sandbox.NO_REPLY with exit 0, and keep its jail line
+and its transcript.
 """
 from __future__ import annotations
 
@@ -106,14 +108,17 @@ out = {"forbid": {k: reach(v) for k, v in FORBID.items()},
        "exec": {"pbpaste": run(["/usr/bin/pbpaste"]), "osascript": run(["/usr/bin/osascript", "-e", "1"])},
        "need": {"case_file": reach("payments.csv"), "cwd_write": write("canary_write.txt"),
                 "home_write": write(os.path.join(os.environ.get("HOME", "."), "canary_write.txt"))},
-       "keyish_env": sorted(k for k in os.environ if any(s in k for s in ("KEY", "TOKEN", "SECRET", "AUTH")))}
+       "keyish_env": sorted(k for k in os.environ if any(s in k for s in ("KEY", "TOKEN", "SECRET", "AUTH"))),
+       "host_env": sorted(k for k, v in os.environ.items()
+                          if k.startswith(("TRAP", "DIRENV_")) or REAL_HOME in v)}
 print("PROBE " + json.dumps(out))
 '''
 PANDAS = "import pandas as pd; print('ROWS', len(pd.read_csv('payments.csv')))"
 
 
 def probe_code(forbid: dict[str, str], other_port: int, proxy_port: int) -> str:
-    return (f"FORBID = {forbid!r}\nOTHER_PORT = {other_port}\nPROXY_PORT = {proxy_port}\n" + PROBE)
+    return (f"FORBID = {forbid!r}\nOTHER_PORT = {other_port}\nPROXY_PORT = {proxy_port}\n"
+            f"REAL_HOME = {str(HOME)!r}\n" + PROBE)
 
 
 def as_shell(code: str) -> str:
@@ -291,9 +296,11 @@ def check(arm: str, case: Path, forbid: dict[str, str], decoy: Path, sibling: Pa
         shutil.copytree(outputs, keep / arm / case.name / "solution" / "outputs", dirs_exist_ok=True)
         (keep / arm / case.name / "solution" / "stderr").write_text(proc.stderr)
 
-    if deadline:  # the harness must stop itself and still leave its transcript
-        ok = proc.returncode == 124 and bool(kept) and jail_line and took < deadline + 60
+    if deadline:  # the harness must stop itself, reply "no answer", and still leave its transcript
+        ok = (proc.returncode == 0 and proc.stdout.strip() == sandbox.NO_REPLY and '"event": "timeout"' in proc.stderr
+              and bool(kept) and jail_line and took < deadline + 60)
         print(f"== {arm} (deadline {deadline}s): {'ok' if ok else 'FAIL'} exit {proc.returncode}, "
+              f"reply {proc.stdout.strip()[-40:]!r}, "
               f"stopped after {took:.0f}s, jail line {jail_line}, "
               f"kept {[str(p.relative_to(outputs)) for p in kept][:2]}", flush=True)
         if not ok:
@@ -337,6 +344,8 @@ def check(arm: str, case: Path, forbid: dict[str, str], decoy: Path, sibling: Pa
             for k, v in res["need"].items():
                 if v not in ("READABLE", "WROTE"):
                     fail(f"needed {k}: {v}")
+            if res["host_env"]:
+                fail(f"environment names this machine: {res['host_env']}")
             lines.append(f"   probe: forbid={sorted(set(res['forbid'].values()))} net={res['net']} "
                          f"exec={res['exec']} need={res['need']} keyish_env={res['keyish_env']}")
         else:

@@ -46,6 +46,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import sandbox
@@ -63,6 +64,21 @@ PROMPT_SUFFIX = "\n\nThe files are in the current working directory."
 MODEL_SLOTS = ("ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
                "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_FABLE_MODEL", "ANTHROPIC_SMALL_FAST_MODEL",
                "CLAUDE_CODE_SUBAGENT_MODEL")
+
+
+def staged_claude() -> str:
+    """The installed Claude Code binary, copied once per version under $TMPDIR and
+    run from there. Claude Code puts its own path into every command's
+    environment (CLAUDE_CODE_EXECPATH); run from the install under $HOME, that
+    would tell a jailed agent where the home directory is."""
+    installed = Path(os.path.realpath(shutil.which("claude") or "claude"))
+    staged = Path(tempfile.gettempdir()) / f"dabstep-claude-{installed.name}" / "claude"
+    if not staged.exists() or staged.stat().st_size != installed.stat().st_size:
+        staged.parent.mkdir(parents=True, exist_ok=True)
+        part = staged.with_name(f"claude.{os.getpid()}")  # arms may start at once
+        shutil.copy2(installed, part)
+        os.replace(part, staged)
+    return os.path.realpath(staged)
 
 
 def main() -> int:
@@ -87,7 +103,7 @@ def main() -> int:
     manifest = json.loads(os.environ["TRAP_MANIFEST"])
     inputs, outputs = Path(manifest["inputs_dir"]), Path(manifest["outputs_dir"])
     prompt = (inputs / "question.txt").read_text().rstrip() + PROMPT_SUFFIX
-    claude = os.path.realpath(shutil.which("claude") or "claude")
+    claude = staged_claude()
     root = sandbox.new_case_root("dabstep-cc-")
     workdir, config_dir = root / "work", root / "config"
     config_dir.mkdir()
@@ -144,8 +160,9 @@ def main() -> int:
             shutil.copy2(jsonl, dest)
         shutil.rmtree(root, ignore_errors=True)
 
-    if proc is None:
-        return 124  # tp's own code for a timed-out case
+    if proc is None:  # graded as not answered, and the run still finishes; see sandbox.NO_REPLY
+        print(sandbox.NO_REPLY)
+        return 0
     try:
         summary = json.loads(proc.stdout)
     except json.JSONDecodeError:

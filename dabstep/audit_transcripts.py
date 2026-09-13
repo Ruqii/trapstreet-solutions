@@ -161,9 +161,10 @@ def audit_case(case: Path) -> list[str]:
         for name, call, result, cwd in reader(path):
             n += 1
             root = case_root(cwd)
-            if root:  # the case's own directory is not a finding, under either spelling
+            if root:  # the case's own directory is not a finding, under any spelling
                 bare = root[len("/private"):] if root.startswith("/private/") else root
-                call = call.replace("/private" + bare, "<case>").replace(bare, "<case>")
+                slug = re.sub(r"[^A-Za-z0-9]", "-", "/private" + bare)  # Claude Code's project-dir form
+                call = call.replace("/private" + bare, "<case>").replace(bare, "<case>").replace(slug, "<case>")
             for rule, rx in RULES.items():
                 for m in rx.finditer(call):
                     lo, hi = max(0, m.start() - 50), min(len(call), m.end() + 50)

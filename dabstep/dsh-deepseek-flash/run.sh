@@ -85,7 +85,9 @@ unset NO_PROXY no_proxy
 
 # tp stops a case at trap.yaml's 1800 s with SIGKILL, which no cleanup survives;
 # stop DSH first, 1700 s from the start of this script, so the session log is
-# still copied out. (DABSTEP_DEADLINE_S is for sandbox_canary.py's timeout check.)
+# still copied out, and reply that there is no answer (sandbox.py's NO_REPLY), so
+# the case is graded as not answered rather than left pending on the site.
+# (DABSTEP_DEADLINE_S is for sandbox_canary.py's timeout check.)
 cd "$ROOT/work" || exit 1
 python3 "$SANDBOX" --root "$ROOT" --ro "$PREFIX" --ro "$TEMPLATE" --port "$PORT" \
     --timeout $(( ${DABSTEP_DEADLINE_S:-1700} - SECONDS )) -- "$DSH" --profile headless "$PROMPT"
