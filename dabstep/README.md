@@ -147,6 +147,14 @@ before publishing:
 uv run dabstep/audit_transcripts.py --arm dabstep/claude-code-kimi-k3
 ```
 
+The transcripts themselves stay private: a transcript's final answer, next to
+the site's pass/fail for that case, is the answer key. Instead,
+[`runs/2026-09-13.sha256`](runs/2026-09-13.sha256) lists the sha256 of every
+transcript from the four jailed board runs, plus the digest of the private
+archive's manifest, which covers everything else those runs left behind. The
+list was committed the day of the runs, so a transcript shown later can be
+checked against it.
+
 ## Reading the cost
 
 Each case in `report.json` has `cost.by_model[]` with:
