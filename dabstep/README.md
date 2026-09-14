@@ -1,6 +1,6 @@
 # dabstep: model × harness
 
-Seven arms on the `dabstep` task (DABStep's questions, 25 cases: 5 easy, 20 hard),
+Eight arms on the `dabstep` task (DABStep's questions, 25 cases: 5 easy, 20 hard),
 built to separate what the model contributes from what the harness contributes,
 and what each costs.
 
@@ -13,10 +13,12 @@ and what each costs.
 | `claude-code-claude-opus-5` (claude-opus-5 · claude-code) | claude-opus-5 | Claude Code | Anthropic API |
 | `claude-code-kimi-k3` (kimi-k3 · claude-code) | kimi-k3 | Claude Code | Moonshot, Anthropic format |
 | `claude-code-glm-5.3-flash` (z-ai/glm-5.3-flash · claude-code) | z-ai/glm-5.3-flash | Claude Code | OpenRouter, Anthropic format |
+| `dsh-claude-opus-5` (claude-opus-5 · dsh) | claude-opus-5 | DeepSeek Harness (same lock), Anthropic route | Anthropic API |
 
 The two mini-loop arms run the same file, [`mini_loop.py`](mini_loop.py), so
-their difference is the model. The three deepseek-flash arms share a model, so
-their differences are the harness. mini-loop is DABStep's ReAct baseline
+their difference is the model. The three deepseek-flash arms share a model, and
+so do the three claude-opus-5 arms, so within each set the differences are the
+harness: two models across the same three harnesses. mini-loop is DABStep's ReAct baseline
 shape: one `run_python` tool, at most 10 runs, then a final answer, with no
 planning, sub-agents or context management.
 
@@ -29,6 +31,14 @@ one model. The Moonshot and OpenRouter keys go in `ANTHROPIC_AUTH_TOKEN` with
 `ANTHROPIC_API_KEY` blanked, as their guides say. DeepSeek's endpoint takes
 its key as `x-api-key`. GLM goes through OpenRouter, whose cached tokens
 the site cannot price yet, so its cost can show as unknown.
+
+The two DSH arms run the same pinned install. `dsh-claude-opus-5` adds one
+overlay, [`opus.patch.yml`](dsh-claude-opus-5/opus.patch.yml), which gives
+DSH's own multi-provider adapter (`dsh-llm-pi-ai`, mounted in the stock headless
+profile with no routes) an Anthropic route through the cost proxy and makes
+claude-opus-5 the default model. It runs at reasoning high, adaptive thinking,
+which is what Claude Code sends Opus 5. DeepSeek's key and endpoint are removed
+from its environment, so no request goes to another model.
 
 ## Held fixed across arms
 

@@ -1,0 +1,18 @@
+name: dsh + claude-opus-5
+cmd: bash run.sh
+profile:
+  model: claude-opus-5
+  framework: dsh
+  notes: >-
+    DeepSeek Harness 0.1.5-rc.1, stock headless profile, zero plugins, pinned
+    by the same package-lock.json as dsh + deepseek-flash, with one overlay
+    (opus.patch.yml): DSH's own multi-provider adapter gets an Anthropic route
+    and claude-opus-5 becomes the default model, at reasoning high. Runs in a
+    jail that reads only the case copy and reaches only the cost proxy, with a
+    fresh DSH_HOME per case; DSH's own command sandbox is off
+    (DSH_PERMISSION_MODE) because macOS cannot nest one inside the jail. Web
+    search and fetch fail.
+timeout: 1800
+tasks:
+  dabstep:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@e7e12e652aa2f31387968eb8623da14465a12263#subdirectory=tasks/dabstep

@@ -59,6 +59,7 @@ ARMS = {  # arm directory -> (API format, env var for the base URL, env var for 
     "claude-code-kimi-k3": ("anthropic", "ANTHROPIC_BASE_URL", "MOONSHOT_API_KEY", "sk-canary"),
     "claude-code-glm-5.3-flash": ("anthropic", "ANTHROPIC_BASE_URL", "OPENROUTER_API_KEY", "sk-or-canary"),
     "dsh-deepseek-flash": ("openai", "DEEPSEEK_BASE_URL", "DEEPSEEK_API_KEY", "sk-canary"),
+    "dsh-claude-opus-5": ("anthropic", "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY", "sk-ant-canary"),
     "mini-loop-claude-opus-5": ("anthropic", "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY", "sk-ant-canary"),
     "mini-loop-deepseek-flash": ("openai", "DEEPSEEK_BASE_URL", "DEEPSEEK_API_KEY", "sk-canary"),
 }

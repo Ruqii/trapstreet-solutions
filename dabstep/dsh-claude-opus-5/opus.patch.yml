@@ -1,0 +1,19 @@
+# DSH's own multi-provider adapter (dsh-llm-pi-ai, already mounted in the stock
+# headless profile with no routes) given one route, Anthropic, and made the
+# default for new agents. Everything else is the stock headless profile.
+#
+# The route's endpoint is tp's cost proxy: tp sets ANTHROPIC_BASE_URL to it for
+# this process, with api.anthropic.com (this arm's .envrc) as its upstream.
+# Reasoning is set to high, the effort Claude Code sends Opus 5 by default, so
+# this arm and claude-code + claude-opus-5 differ in harness, not in effort.
+- id: llm-pi-ai
+  config:
+    providers:
+      anthropic:
+        apiKeyEnv: ANTHROPIC_API_KEY
+        baseURL: !!js process.env.ANTHROPIC_BASE_URL
+        reasoning: high
+- id: agent-default-model
+  config:
+    provider: anthropic
+    model: claude-opus-5
