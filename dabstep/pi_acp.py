@@ -130,6 +130,22 @@ def pi_config(home: Path, provider: str, model: str, thinking: str, proxy: str) 
     }, indent=2))
 
 
+def provider_failure(sessions: list[Path]) -> str | None:
+    """The provider's error, if Pi's last model turn ended in one."""
+    last = None
+    for path in sessions:
+        for line in path.read_text().splitlines():
+            try:
+                message = json.loads(line).get("message") or {}
+            except json.JSONDecodeError:
+                continue
+            if message.get("role") == "assistant":
+                last = message
+    if last and last.get("stopReason") == "error":
+        return str(last.get("errorMessage") or "unknown provider error")[:500]
+    return None
+
+
 def solution(args: argparse.Namespace) -> int:
     started = time.monotonic()
     provider, _, model = args.model.partition("/")
@@ -182,13 +198,22 @@ def solution(args: argparse.Namespace) -> int:
     finally:
         keep = outputs / "transcripts"
         sessions = root / "home/.pi/agent/sessions"
-        for jsonl in sessions.rglob("*.jsonl") if sessions.is_dir() else ():
+        kept = sorted(sessions.rglob("*.jsonl")) if sessions.is_dir() else []
+        for jsonl in kept:
             dest = keep / jsonl.relative_to(sessions)
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(jsonl, dest)
+        failure = provider_failure(kept)
         shutil.rmtree(root, ignore_errors=True)
 
     print(json.dumps({"event": "shape_exit", "status": status, "backstop": backstop}), file=sys.stderr)
+    if failure:
+        # Not the model's answer, nor its failure to give one: the provider refused the
+        # turn (402 no balance, 401, a 5xx that outlasted Pi's retries). Pi ends such a
+        # turn normally with nothing to say, which would be graded as not answered. Exit
+        # non-zero instead, so the case stays pending rather than scored.
+        print(json.dumps({"event": "provider_error", "message": failure}), file=sys.stderr)
+        return 3
     reply = (reply or "").strip()
     if status == 124:  # graded as not answered, and the run still finishes; see sandbox.NO_REPLY
         print(json.dumps({"event": "timeout", "after_s": round(time.monotonic() - started)}), file=sys.stderr)
