@@ -19,9 +19,10 @@ Why a solution around the shape rather than the shape as `cmd`:
   copy. The same copy's question.txt gets the sentence every other arm adds:
   "The files are in the current working directory."
 - The shape reports a stopped turn with a non-zero exit (124 at its deadline,
-  20-22 for a refusal or a limit). The site records a non-zero exit as
-  SOLVER_ERRORED, which leaves the case pending and the run never scored. Those
-  become exit 0 here: an answer the judge can read, or sandbox.NO_REPLY.
+  20-22 for a refusal or a limit, 23 when the agent failed the turn). The site
+  records a non-zero exit as SOLVER_ERRORED, which leaves the case pending and
+  the run never scored. Those become exit 0 here: an answer the judge can read,
+  or a no-reply line. A config error (24) still fails.
 - Pi's session file is the transcript audit_transcripts.py reads. It lives in
   the jail's $HOME, outside the shape's work directory (which the shape
   removes), and is copied to the case's outputs_dir afterwards.
@@ -69,6 +70,9 @@ SHAPE_WRAPUP_S = 30
 TRAP_COMMIT = "c190486850ecdc800e3953eaa37968b5e38e7429"
 TP = ("uvx", "--quiet", "--python", "3.13", "--from", f"git+https://github.com/trapstreet/trap@{TRAP_COMMIT}", "tp")
 PROMPT_SUFFIX = "\n\nThe files are in the current working directory."
+# The reply for a turn the agent failed; like sandbox.NO_REPLY, graded as not
+# answered, and deliberately free of "answer:".
+AGENT_FAILED = "(no reply: the agent failed the turn)"
 DEAD_PROXY = "http://127.0.0.1:9"
 # provider -> (base URL variable, key variable)
 ROUTES = {"anthropic": ("ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY"),
@@ -193,7 +197,10 @@ def solution(args: argparse.Namespace) -> int:
     if status in (0, 20, 21, 22):  # an answer, a refusal, or a turn cut short: the judge reads what there is
         print(reply)
         return 0
-    return status
+    if status == 23:  # the agent failed the turn (the provider erred, or no model answered): not answered
+        print(AGENT_FAILED)
+        return 0
+    return status  # 24, a config error, and anything else: fail loudly
 
 
 def agent() -> int:
