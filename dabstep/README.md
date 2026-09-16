@@ -1,6 +1,6 @@
 # dabstep: model × harness
 
-Eight arms on the `dabstep` task (DABStep's questions, 25 cases: 5 easy, 20 hard),
+Ten arms on the `dabstep` task (DABStep's questions, 25 cases: 5 easy, 20 hard),
 built to separate what the model contributes from what the harness contributes,
 and what each costs.
 
@@ -14,11 +14,13 @@ and what each costs.
 | `claude-code-kimi-k3` (kimi-k3 · claude-code) | kimi-k3 | Claude Code | Moonshot, Anthropic format |
 | `claude-code-glm-5.3-flash` (z-ai/glm-5.3-flash · claude-code) | z-ai/glm-5.3-flash | Claude Code | OpenRouter, Anthropic format |
 | `dsh-claude-opus-5` (claude-opus-5 · dsh) | claude-opus-5 | DeepSeek Harness (same lock), Anthropic route | Anthropic API |
+| `pi-claude-opus-5` (claude-opus-5 · pi) | claude-opus-5 | Pi 0.85.1 over ACP (`tp shape acp` + pi-acp 0.0.33) | Anthropic API |
+| `pi-deepseek-flash` (deepseek-flash · pi) | deepseek-flash | Pi, same lock | DeepSeek, OpenAI format |
 
 The two mini-loop arms run the same file, [`mini_loop.py`](mini_loop.py), so
-their difference is the model. The three deepseek-flash arms share a model, and
-so do the three claude-opus-5 arms, so within each set the differences are the
-harness: two models across the same three harnesses. mini-loop is DABStep's ReAct baseline
+their difference is the model. The four deepseek-flash arms share a model, and
+so do the four claude-opus-5 arms, so within each set the differences are the
+harness. mini-loop is DABStep's ReAct baseline
 shape: one `run_python` tool, at most 10 runs, then a final answer, with no
 planning, sub-agents or context management.
 
@@ -40,6 +42,30 @@ claude-opus-5 the default model. It runs at reasoning high, adaptive thinking,
 which is what Claude Code sends Opus 5. DeepSeek's key and endpoint are removed
 from its environment, so no request goes to another model.
 
+The two pi arms share [`pi_acp.py`](pi_acp.py) and one install pinned by
+[`pi/package-lock.json`](pi/package-lock.json). Pi runs with its own system
+prompt and its default tools (read, write, edit, bash; it has no web tools),
+driven over the Agent Client Protocol by `tp shape acp` from
+[trapstreet/trap](https://github.com/trapstreet/trap) (pinned to a commit, run
+through `uvx`) and the pi-acp adapter. The shape starts the agent, sets the
+model and the thinking level through ACP (`high` on both), asks the question
+once, grants each tool call as it comes, and prints Pi's last message. Its
+stderr keeps the config the case ran with, Pi's earlier messages and every tool
+call. Three things sit around the shape:
+
+- The shape refuses a case whose inputs hold a symlink, and dabstep links each
+  case's seven files to one shared copy. `pi_acp.py` copies the case with the
+  links dereferenced, as every other arm does, and hands the shape the copy.
+- The shape exits non-zero when a turn stops early (124 at its deadline, 20-22
+  for a refusal or a limit). `pi_acp.py` turns those into exit 0 with the reply
+  or `(no reply: stopped at the time limit)`, for the reason given under the
+  canary below.
+- Pi's session file is kept in the case's `outputs_dir`.
+
+Pi's `models.json` routes only the arm's own provider, through the cost proxy.
+DeepSeek's entry names the model `deepseek-flash`, the id the other deepseek
+arms send (Pi's own catalogue calls it `deepseek-v4-flash`).
+
 ## Held fixed across arms
 
 - **The question.** Each arm reads the case's `question.txt` and works in a
@@ -57,7 +83,8 @@ from its environment, so no request goes to another model.
   private task repo, the DABStep download, the grader's packs, earlier runs).
   So every model-driven process runs under macOS Seatbelt with a
   deny-by-default profile, [`sandbox.py`](sandbox.py). That means all of
-  Claude Code, all of DSH, and mini-loop's snippet interpreter.
+  Claude Code, all of DSH, all of Pi (with pi-acp), and mini-loop's snippet
+  interpreter.
   - **Reads:** the case copy, the harness's own install, and the system trees
     (Homebrew's python3 and node included).
   - **Writes:** only a fresh per-case root, which holds the case copy plus its
@@ -72,6 +99,12 @@ from its environment, so no request goes to another model.
     that names a place on this machine: no tp or direnv variables, and
     nothing under the home directory, which includes Claude Code's own
     binary. Claude Code runs from a copy under `$TMPDIR`.
+  - What the environment rule cannot hide: macOS lets a process read the
+    starting environment of any other process its user runs (the
+    `kern.procargs2` sysctl, which Seatbelt does not mediate). A jailed
+    process could learn from its parent where the task checkout is. It still
+    could not read anything there, and the audit below flags any `ps e`,
+    `sysctl` or `procargs` it runs.
   - DSH's own command sandbox limits writes but not reads, and macOS cannot
     apply it inside the jail. It is off (`DSH_PERMISSION_MODE=danger-full-access`),
     and each DSH case gets its own `DSH_HOME`.
@@ -145,6 +178,7 @@ transcript in the run's `solution/outputs`:
 
 - Claude Code's session JSONL, sub-agents included;
 - DSH's `session.v3.jsonl.zstd`;
+- Pi's session JSONL;
 - mini-loop's `transcript.json`.
 
 [`audit_transcripts.py`](audit_transcripts.py) reads them and flags any tool

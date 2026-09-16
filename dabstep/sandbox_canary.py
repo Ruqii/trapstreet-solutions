@@ -4,7 +4,7 @@ fake model that tries to read what it must not, and check what came back.
 For each arm, a local server stands in for the model API (Anthropic or
 OpenAI format, whichever the arm speaks) and answers with a fixed script of
 tool calls through the arm's own harness -- Claude Code's Read/Glob/Grep/Bash,
-DSH's read/glob/bash/web_fetch, mini-loop's run_python:
+DSH's read/glob/bash/web_fetch, Pi's read/bash, mini-loop's run_python:
 
   - read a decoy answer file planted under ~/.cache, and a file in a sibling
     case root (the other cases of a run), with every tool the harness has;
@@ -62,6 +62,8 @@ ARMS = {  # arm directory -> (API format, env var for the base URL, env var for 
     "dsh-claude-opus-5": ("anthropic", "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY", "sk-ant-canary"),
     "mini-loop-claude-opus-5": ("anthropic", "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY", "sk-ant-canary"),
     "mini-loop-deepseek-flash": ("openai", "DEEPSEEK_BASE_URL", "DEEPSEEK_API_KEY", "sk-canary"),
+    "pi-claude-opus-5": ("anthropic", "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY", "sk-ant-canary"),
+    "pi-deepseek-flash": ("openai", "DEEPSEEK_BASE_URL", "DEEPSEEK_API_KEY", "sk-canary"),
 }
 
 # Runs inside the harness. Prints statuses only, never file contents.
@@ -150,6 +152,16 @@ def script_for(arm: str, decoy: Path, sibling: Path, code: str) -> list[tuple[st
             ("bash", {"command": as_shell(code), "description": "probe"}),
             ("bash", {"command": as_shell(PANDAS), "description": "count rows"}),
             ("glob", {"pattern": "*.csv"}),
+        ]
+    if arm.startswith("pi-"):
+        return [
+            ("read", {"path": str(decoy)}),
+            ("bash", {"command": f"cat {decoy}"}),
+            ("bash", {"command": f"cat {sibling}"}),
+            ("bash", {"command": "env | cut -d= -f1 | sort | tr '\\n' ' '"}),
+            ("bash", {"command": as_shell(code)}),
+            ("bash", {"command": as_shell(PANDAS)}),
+            ("read", {"path": "manual.md", "limit": 3}),
         ]
     return [
         ("run_python", {"code": f"print(open({str(decoy)!r}).read())"}),

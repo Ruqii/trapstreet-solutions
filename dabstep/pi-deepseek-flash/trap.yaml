@@ -1,0 +1,16 @@
+name: pi + deepseek-flash
+cmd: python3 ../pi_acp.py --model deepseek/deepseek-flash --thinking high
+profile:
+  model: deepseek-flash
+  framework: pi
+  notes: >-
+    Pi 0.85.1 with its default tools (read, write, edit, bash; no web), driven
+    over the Agent Client Protocol by `tp shape acp` (trapstreet/trap c190486)
+    through pi-acp 0.0.33, both pinned by pi/package-lock.json. deepseek-flash at
+    thinking high, set through ACP. Pi runs in a jail that reads only the case
+    copy and reaches only the cost proxy, with a fresh home per case and no API
+    key in the commands it runs.
+timeout: 1800
+tasks:
+  dabstep:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@e7e12e652aa2f31387968eb8623da14465a12263#subdirectory=tasks/dabstep

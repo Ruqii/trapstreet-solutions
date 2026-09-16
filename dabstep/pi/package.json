@@ -1,0 +1,9 @@
+{
+  "name": "dabstep-pi",
+  "private": true,
+  "description": "pi coding agent and its ACP adapter, pinned for the dabstep pi arms",
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "0.85.1",
+    "pi-acp": "0.0.33"
+  }
+}
