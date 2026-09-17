@@ -8,6 +8,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import solution  # noqa: E402
 
+REAL_USAGE_LINE = solution.Jev.usage_line  # tests replace solution.Jev with a factory
+
 CONVERSATION = {"context": [{"speaker": "USER", "text": "hi"}], "response": "hello there"}
 
 
@@ -44,7 +46,10 @@ class FakeJev:
         return {k: 0.3 for k in questions}
 
     def usage_line(self):
-        return f"JEV_USAGE: calls={self.calls} input_tokens=0 models=jev-1.13.0"
+        return REAL_USAGE_LINE(self)
+
+    input_tokens = 1000
+    models = {"jev-1.13.0"}
 
 
 @pytest.fixture
@@ -133,3 +138,14 @@ def test_jev_failure_is_reported_to_claude_not_fatal(inputs, monkeypatch, capsys
     script = [message([tool_use("ask_jev", {})], "tool_use"), message([text("ANSWER: 0.5")], "end_turn")]
     out, fake, _ = run(monkeypatch, capsys, "claude-jev-single", script, jev=Boom())
     assert fake.requests[1]["messages"][-1]["content"][0]["is_error"] is True and last_answer(out) == 0.5
+
+
+def test_jev_arms_report_unmetered_cost(inputs, monkeypatch, capsys):
+    out, _, _ = run(monkeypatch, capsys, "jev-alone")
+    line = [l for l in out.splitlines() if l.startswith("UNMETERED_COST_USD:")]
+    assert line and float(line[0].split(":")[1]) == pytest.approx(1000 * 0.042 / 1e6)
+
+
+def test_claude_only_arm_reports_no_unmetered_cost(inputs, monkeypatch, capsys):
+    out, _, _ = run(monkeypatch, capsys, "claude-alone", [message([text("ANSWER: 0.4")], "end_turn")])
+    assert "UNMETERED_COST_USD" not in out

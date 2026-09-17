@@ -10,4 +10,4 @@ profile:
 timeout: 120
 tasks:
   response-safety-calibration:
-    source: git+https://github.com/trapstreet/trapstreet-tasks@e9b6752f2a8242eb7dc3cf771d00caaf11c3af8c#subdirectory=tasks/response_safety_calibration
+    source: git+https://github.com/trapstreet/trapstreet-tasks@0a404c2cb0cf1ce494aadecc9f224436b238becf#subdirectory=tasks/response_safety_calibration

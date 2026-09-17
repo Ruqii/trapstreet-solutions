@@ -26,7 +26,8 @@ jev-1.13.0, and every arm reads the same inputs (task.md + conversation.json).
 No refusal fallback: a fallback silently answers with a different model, and
 the board would credit the wrong one. A refused case prints no ANSWER line and
 is scored as an uninformative 0.5. Jev isn't metered by tp's cost proxy, so
-each run prints a JEV_USAGE line for its own cost accounting.
+every Jev-using case prints an UNMETERED_COST_USD line the task sums as
+self-reported cost.
 """
 from __future__ import annotations
 
@@ -40,6 +41,7 @@ from pathlib import Path
 
 CLAUDE_MODEL = "claude-sonnet-5"
 JEV_MODEL = "jev-1.13.0"
+JEV_PRICE_PER_MTOK = 0.042
 SAMPLES = 10
 MAX_TURNS = 8
 
@@ -95,7 +97,12 @@ class Jev:
         return {k: resp.nouls[k].noul for k in questions}
 
     def usage_line(self) -> str:
-        return f"JEV_USAGE: calls={self.calls} input_tokens={self.input_tokens} models={','.join(sorted(self.models)) or '-'}"
+        # Jev bills input tokens only ($0.042 per million, output free). tp's cost
+        # proxy can't see TypeSafe, so the arm reports it; the task sums it as
+        # self-reported `cost_unmetered_usd`.
+        return (f"JEV_USAGE: calls={self.calls} input_tokens={self.input_tokens} "
+                f"models={','.join(sorted(self.models)) or '-'}\n"
+                f"UNMETERED_COST_USD: {self.input_tokens * JEV_PRICE_PER_MTOK / 1e6:.8f}")
 
 
 # ------------------------------------------------------------------------ Claude

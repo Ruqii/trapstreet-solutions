@@ -43,7 +43,7 @@ cp .env.example .env    # ANTHROPIC_API_KEY, TYPESAFE_API_KEY
 direnv allow
 ```
 
-Each `trap.yaml` pins the task's public commit (`e9b6752f`). Commit and push
+Each `trap.yaml` pins the task's public commit (`0a404c2c`). Commit and push
 any change before running; then run each arm from its directory:
 
 ```bash
