@@ -74,9 +74,11 @@ Options:
 
 Proposed answer: {proposed}
 """
-# The judge's parser: models write the sentinel in markdown ("**ANSWER: G**"), and a
-# line-start-only pattern silently dropped 23 of 200 Haiku answers on the first run.
-ANSWER_RE = re.compile(r"^[ \t>*_#-]*ANSWER:[ \t*_]*\(?([A-Ja-j])\)?[ \t*_]*(?![A-Za-z])", re.MULTILINE)
+# The judge's parser: models write the sentinel in markdown and in title case
+# ("**ANSWER: G**", "**Answer: B**"), and a line-start-only upper-case pattern
+# silently dropped 23 of 200 Haiku answers on the first run.
+ANSWER_RE = re.compile(r"^[ \t>*_#-]*(?<![A-Z_])ANSWER:[ \t*_]*\(?([A-Ja-j])\)?[ \t*_]*(?![A-Za-z])",
+                       re.MULTILINE | re.IGNORECASE)
 P_WRONG_RE = re.compile(r"^\s*P_WRONG:\s*(\d{1,3})\s*$", re.MULTILINE)
 
 
