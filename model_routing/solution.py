@@ -74,7 +74,9 @@ Options:
 
 Proposed answer: {proposed}
 """
-ANSWER_RE = re.compile(r"^\s*ANSWER:\s*\(?([A-Ja-j])\)?(?![A-Za-z])", re.MULTILINE)
+# The judge's parser: models write the sentinel in markdown ("**ANSWER: G**"), and a
+# line-start-only pattern silently dropped 23 of 200 Haiku answers on the first run.
+ANSWER_RE = re.compile(r"^[ \t>*_#-]*ANSWER:[ \t*_]*\(?([A-Ja-j])\)?[ \t*_]*(?![A-Za-z])", re.MULTILINE)
 P_WRONG_RE = re.compile(r"^\s*P_WRONG:\s*(\d{1,3})\s*$", re.MULTILINE)
 
 

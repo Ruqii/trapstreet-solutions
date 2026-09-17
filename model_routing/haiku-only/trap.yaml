@@ -9,4 +9,4 @@ profile:
 timeout: 300
 tasks:
   model-routing:
-    source: git+https://github.com/trapstreet/trapstreet-tasks@7f36c68b831fbc1454961ceab9bec4f2313bff22#subdirectory=tasks/model_routing
+    source: git+https://github.com/trapstreet/trapstreet-tasks@5397410c958fbcabf755ad104ee49b34c288ab18#subdirectory=tasks/model_routing

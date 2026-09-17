@@ -140,4 +140,23 @@ def test_first_answer_is_printed_only_when_haiku_answered_before_routing():
 
 def test_every_arm_pins_the_current_task_commit():
     for arm in solution.ARMS:
-        assert "trapstreet-tasks@7f36c68b831fbc1454961ceab9bec4f2313bff22#" in (ROOT / arm / "trap.yaml").read_text()
+        assert "trapstreet-tasks@5397410c958fbcabf755ad104ee49b34c288ab18#" in (ROOT / arm / "trap.yaml").read_text()
+
+
+@pytest.mark.parametrize("reply,expected", [
+    ("**ANSWER: B**", "B"), ("> **ANSWER:** B", "B"), ("- ANSWER: (B)", "B"),
+    ("ANSWER: B", "B"), ("ANSWER: Bat", None), ("ANSWER: J", None)])
+def test_markdown_around_the_answer_is_read(reply, expected):
+    assert run("haiku-only", {"claude-haiku-4-5": [reply]})[0] == expected
+
+
+def test_solution_and_judge_parse_answers_the_same_way():
+    judge_path = Path("/Users/zhengruqi/Documents/Projects/trapstreet-tasks-private/tasks/model_routing/judge.py")
+    if not judge_path.exists():
+        pytest.skip("judge is in the private task repo")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("mr_judge", judge_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    for text in ("**ANSWER: G**", "ANSWER: A", "- ANSWER: (B)", "ANSWER: Cat", "x\n**ANSWER: C**\n**ANSWER: D**"):
+        assert solution.ANSWER_RE.findall(text) == mod.ANSWER_RE.findall(text), text
