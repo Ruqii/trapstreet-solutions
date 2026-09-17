@@ -95,6 +95,27 @@ def test_sampled_ignores_unparseable_votes(inputs, monkeypatch, capsys):
     script = [message([text("YES")], "end_turn")] * 5 + [message([text("maybe")], "end_turn")] * 5
     out, _, _ = run(monkeypatch, capsys, "claude-alone-sampled", script)
     assert last_answer(out) == 1.0
+    assert "votes: yes=5 no=0 refused=0 unparseable=5" in out
+
+
+def test_sampled_overrides_task_answer_format(inputs, monkeypatch, capsys):
+    # First run: without an explicit override Claude followed task.md and wrote
+    # "ANSWER: 0.05" instead of voting.
+    _, fake, _ = run(monkeypatch, capsys, "claude-alone-sampled", [message([text("NO")], "end_turn")] * 10)
+    req = fake.requests[0]
+    assert "ANSWER" in req["system"] and "YES or NO" in req["system"]
+    assert "Do not write an ANSWER line" in req["messages"][0]["content"]
+
+
+def test_sampled_probability_reply_is_not_called_a_refusal(inputs, monkeypatch, capsys):
+    out, _, _ = run(monkeypatch, capsys, "claude-alone-sampled", [message([text("ANSWER: 0.05")], "end_turn")] * 10)
+    assert last_answer(out) is None and "REFUSED" not in out and "no usable votes" in out
+    assert "unparseable=10" in out
+
+
+def test_sampled_all_refusals_print_refused(inputs, monkeypatch, capsys):
+    out, _, _ = run(monkeypatch, capsys, "claude-alone-sampled", [message([], "refusal")] * 10)
+    assert "REFUSED" in out and "refused=10" in out
 
 
 def test_jev_alone_asks_one_overall_noul(inputs, monkeypatch, capsys):
