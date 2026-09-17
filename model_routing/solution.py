@@ -27,7 +27,8 @@ Every threshold was fixed on MMLU-Pro calibration questions that are not in
 the task (see calibration/), as the score above which the target share of those
 questions fall. No answer key was used to set them.
 
-Each case prints ESCALATED: yes|no and, when Jev ran, UNMETERED_COST_USD for
+Each case prints ESCALATED: yes|no, FIRST_ANSWER (Haiku's answer) whenever Haiku
+answered before the route was chosen, and, when Jev ran, UNMETERED_COST_USD for
 its input tokens (tp's cost proxy cannot see TypeSafe).
 """
 from __future__ import annotations
@@ -146,7 +147,8 @@ def route(arm: str, q: dict, client, jev_factory=Jev) -> tuple[str | None, bool,
         return answer(client, STRONG if up else CHEAP, q), up, lines
 
     cheap = answer(client, CHEAP, q)
-    lines.append(f"CHEAP: {cheap}")
+    if cheap is not None:
+        lines.append(f"FIRST_ANSWER: {cheap}")
     if arm.startswith("jev-cascade"):
         jev = jev_factory()
         if cheap is None:

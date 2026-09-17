@@ -34,6 +34,7 @@ file from them.
 ## What each case prints
 
 - `ROUTER: ...` — the score and threshold that decided the route
+- `FIRST_ANSWER: <letter>` — Haiku's answer, when Haiku answered before the route was chosen
 - `ESCALATED: yes|no` — whether Opus produced the final answer after another step ran first
 - `UNMETERED_COST_USD: ...` — Jev's spend ($0.042 per million input tokens), which tp cannot meter
 - `ANSWER: <letter>`
@@ -48,7 +49,7 @@ cp .env.example .env    # ANTHROPIC_API_KEY, TYPESAFE_API_KEY
 direnv allow
 ```
 
-Each `trap.yaml` pins the task's public commit (`ffecb9fb`). Commit and push
+Each `trap.yaml` pins the task's public commit (`7f36c68b`). Commit and push
 any change before running; then run each arm from its directory:
 
 ```bash

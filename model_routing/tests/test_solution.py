@@ -127,3 +127,17 @@ def test_every_arm_folder_names_its_arm_and_the_task():
     for arm in solution.ARMS:
         y = (ROOT / arm / "trap.yaml").read_text()
         assert f"--arm {arm}\n" in y and "model-routing:" in y and f"TRAP_AGENT={arm}" in (ROOT / arm / ".envrc").read_text()
+
+
+def test_first_answer_is_printed_only_when_haiku_answered_before_routing():
+    _, _, lines, _, _ = run("random-60", {"claude-haiku-4-5": ["ANSWER: A"], "claude-opus-5": ["ANSWER: C"]})
+    assert "FIRST_ANSWER: A" in lines
+    _, _, lines, _, _ = run("jev-cascade-30", {"claude-haiku-4-5": ["none"], "claude-opus-5": ["ANSWER: C"]}, 0.1)
+    assert not any(l.startswith("FIRST_ANSWER") for l in lines)
+    _, _, lines, _, _ = run("jev-preroute-30", {"claude-haiku-4-5": ["ANSWER: A"]}, 0.1)
+    assert not any(l.startswith("FIRST_ANSWER") for l in lines)
+
+
+def test_every_arm_pins_the_current_task_commit():
+    for arm in solution.ARMS:
+        assert "trapstreet-tasks@7f36c68b831fbc1454961ceab9bec4f2313bff22#" in (ROOT / arm / "trap.yaml").read_text()
