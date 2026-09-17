@@ -37,13 +37,16 @@ import argparse
 import hashlib
 import json
 import os
+import random
 import re
 import sys
+import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 CHEAP, STRONG = "claude-haiku-4-5", "claude-opus-5"
 JEV_MODEL, JEV_PRICE_PER_MTOK = "jev-1.13.0", 0.042
+JEV_RETRIES, JEV_BACKOFF_CAP = 8, 20
 MAX_TOKENS = 16000
 THRESHOLDS = json.loads((HERE / "calibration" / "thresholds.json").read_text())["thresholds"]
 ARMS = ("haiku-only", "opus-only", "jev-cascade-30", "jev-cascade-60", "jev-preroute-30",
@@ -115,10 +118,22 @@ class Jev:
         self.client, self.input_tokens = TypeSafeClient(), 0
 
     def noul(self, state: dict, instructions: str) -> float:
+        # TypeSafe answers 529 ("high traffic") often enough to fail a whole run:
+        # 76 of 200 cases on 2026-09-17. Retry with backoff; a case that still
+        # cannot reach Jev raises, and tp records the case as failed.
         from typesafe_sdk import Noul
-        r = self.client.system_one(state=state, model=JEV_MODEL, questions={"q": Noul(instructions=instructions)})
-        self.input_tokens += getattr(r.usage, "input_tokens", 0) or 0
-        return r.nouls["q"].noul
+        last: Exception | None = None
+        for attempt in range(JEV_RETRIES):
+            try:
+                r = self.client.system_one(state=state, model=JEV_MODEL,
+                                           questions={"q": Noul(instructions=instructions)})
+            except Exception as e:  # noqa: BLE001 - the SDK raises several transport/5xx types
+                last = e
+                time.sleep(min(JEV_BACKOFF_CAP, 2 ** attempt) + random.random())
+                continue
+            self.input_tokens += getattr(r.usage, "input_tokens", 0) or 0
+            return r.nouls["q"].noul
+        raise RuntimeError(f"Jev unreachable after {JEV_RETRIES} attempts: {last}")
 
     def cost_line(self) -> str:
         return f"UNMETERED_COST_USD: {self.input_tokens * JEV_PRICE_PER_MTOK / 1e6:.8f}"

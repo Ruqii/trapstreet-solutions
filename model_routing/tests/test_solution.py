@@ -140,7 +140,7 @@ def test_first_answer_is_printed_only_when_haiku_answered_before_routing():
 
 def test_every_arm_pins_the_current_task_commit():
     for arm in solution.ARMS:
-        assert "trapstreet-tasks@5397410c958fbcabf755ad104ee49b34c288ab18#" in (ROOT / arm / "trap.yaml").read_text()
+        assert "trapstreet-tasks@7f36c68b831fbc1454961ceab9bec4f2313bff22#" in (ROOT / arm / "trap.yaml").read_text()
 
 
 @pytest.mark.parametrize("reply,expected", [
@@ -160,3 +160,37 @@ def test_solution_and_judge_parse_answers_the_same_way():
     spec.loader.exec_module(mod)
     for text in ("**ANSWER: G**", "ANSWER: A", "- ANSWER: (B)", "ANSWER: Cat", "x\n**ANSWER: C**\n**ANSWER: D**"):
         assert solution.ANSWER_RE.findall(text) == mod.ANSWER_RE.findall(text), text
+
+
+def test_jev_retries_then_gives_up(monkeypatch):
+    calls = []
+
+    class Flaky(FakeJev):
+        def __init__(self, fails):
+            super().__init__(0.9)
+            self.fails = fails
+
+        def noul(self, state, instructions):
+            calls.append(1)
+            if len(calls) <= self.fails:
+                raise RuntimeError("529 high traffic")
+            return super().noul(state, instructions)
+
+    monkeypatch.setattr(solution.time, "sleep", lambda s: None)
+    real = solution.Jev.noul
+    flaky = Flaky(3)
+    # drive the real retry loop with a client that fails three times
+    class Client:
+        def __init__(self, fails): self.n, self.fails = 0, fails
+        def system_one(self, **kw):
+            self.n += 1
+            if self.n <= self.fails:
+                raise RuntimeError("529 high traffic")
+            return SimpleNamespace(nouls={"q": SimpleNamespace(noul=0.7)}, usage=SimpleNamespace(input_tokens=10))
+    jev = solution.Jev.__new__(solution.Jev)
+    jev.client, jev.input_tokens = Client(3), 0
+    assert real(jev, {}, "q?") == 0.7 and jev.input_tokens == 10
+    jev2 = solution.Jev.__new__(solution.Jev)
+    jev2.client, jev2.input_tokens = Client(solution.JEV_RETRIES + 1), 0
+    with pytest.raises(RuntimeError, match="Jev unreachable"):
+        real(jev2, {}, "q?")
