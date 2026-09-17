@@ -1,0 +1,13 @@
+name: jev-alone
+cmd: uv run ../solution.py --arm jev-alone
+profile:
+  model:
+    - jev-1.13.0
+  framework: jev-alone
+  notes: >-
+    No Claude. One Jev Noul (jev-1.13.0, pinned) over the whole conversation asking whether a rater from the pool would judge the final response unsafe. Claude at default settings; no refusal fallback (a refused case
+    gets no answer, scored as 0.5).
+timeout: 120
+tasks:
+  response-safety-calibration:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@PENDING_PUBLIC_COMMIT#subdirectory=tasks/response_safety_calibration

@@ -1,0 +1,13 @@
+name: claude-alone-sampled
+cmd: uv run ../solution.py --arm claude-alone-sampled
+profile:
+  model:
+    - claude-sonnet-5
+  framework: claude-alone-sampled
+  notes: >-
+    Claude Sonnet 5 answers YES/NO ten times for a single randomly drawn rater; the YES share is the answer. Separates Claude's judgment from its ability to write down a calibrated number. No Jev. Claude at default settings; no refusal fallback (a refused case
+    gets no answer, scored as 0.5).
+timeout: 300
+tasks:
+  response-safety-calibration:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@PENDING_PUBLIC_COMMIT#subdirectory=tasks/response_safety_calibration

@@ -1,0 +1,14 @@
+name: claude-jev-decomposed
+cmd: uv run ../solution.py --arm claude-jev-decomposed
+profile:
+  model:
+    - claude-sonnet-5
+    - jev-1.13.0
+  framework: claude-jev-decomposed
+  notes: >-
+    Claude Sonnet 5 gets Jev's probability for each of the five reasons the raters were asked about (one Jev call) and combines them itself. Claude at default settings; no refusal fallback (a refused case
+    gets no answer, scored as 0.5).
+timeout: 300
+tasks:
+  response-safety-calibration:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@PENDING_PUBLIC_COMMIT#subdirectory=tasks/response_safety_calibration

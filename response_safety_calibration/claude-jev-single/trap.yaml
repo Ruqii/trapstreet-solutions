@@ -1,0 +1,14 @@
+name: claude-jev-single
+cmd: uv run ../solution.py --arm claude-jev-single
+profile:
+  model:
+    - claude-sonnet-5
+    - jev-1.13.0
+  framework: claude-jev-single
+  notes: >-
+    Claude Sonnet 5 may call Jev (jev-1.13.0) once for the overall question, sees the probability, and gives its own final estimate. Claude at default settings; no refusal fallback (a refused case
+    gets no answer, scored as 0.5).
+timeout: 300
+tasks:
+  response-safety-calibration:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@PENDING_PUBLIC_COMMIT#subdirectory=tasks/response_safety_calibration
