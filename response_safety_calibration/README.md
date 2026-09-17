@@ -43,8 +43,8 @@ cp .env.example .env    # ANTHROPIC_API_KEY, TYPESAFE_API_KEY
 direnv allow
 ```
 
-Each `trap.yaml` pins the task's public commit. Replace `PENDING_PUBLIC_COMMIT`
-with it, commit and push, then run each arm from its directory:
+Each `trap.yaml` pins the task's public commit (`e9b6752f`). Commit and push
+any change before running; then run each arm from its directory:
 
 ```bash
 tp run --task response-safety-calibration --trust-remote
