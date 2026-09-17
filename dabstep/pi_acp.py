@@ -203,7 +203,9 @@ def solution(args: argparse.Namespace) -> int:
             dest = keep / jsonl.relative_to(sessions)
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(jsonl, dest)
-        failure = provider_failure(kept)
+        # Only a turn that ended on its own: at the deadline the shape cancels the turn,
+        # and Pi records that cancel as an error too ("This operation was aborted").
+        failure = provider_failure(kept) if status in (0, 23) else None
         shutil.rmtree(root, ignore_errors=True)
 
     print(json.dumps({"event": "shape_exit", "status": status, "backstop": backstop}), file=sys.stderr)
