@@ -1,0 +1,14 @@
+name: jev-cascade-60
+cmd: uv run ../solution.py --arm jev-cascade-60
+profile:
+  model:
+    - claude-haiku-4-5
+    - claude-opus-5
+    - jev-1.13.0
+  framework: jev-cascade-60
+  notes: >-
+    Haiku answers; Jev (jev-1.13.0) judges whether that answer is wrong; at or above a threshold that escalated 60% of calibration questions, Opus answers instead. No extended thinking; no refusal fallback.
+timeout: 900
+tasks:
+  model-routing:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@ffecb9fbdbaeb2e41acdf5b6a3767764b6a237d5#subdirectory=tasks/model_routing

@@ -1,0 +1,12 @@
+name: opus-only
+cmd: uv run ../solution.py --arm opus-only
+profile:
+  model:
+    - claude-opus-5
+  framework: opus-only
+  notes: >-
+    Claude Opus 5 answers every question. The accuracy bound. No extended thinking; no refusal fallback.
+timeout: 900
+tasks:
+  model-routing:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@ffecb9fbdbaeb2e41acdf5b6a3767764b6a237d5#subdirectory=tasks/model_routing

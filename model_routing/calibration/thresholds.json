@@ -1,0 +1,17 @@
+{
+  "_doc": "Routing thresholds fixed on the task's calibration questions (score quantiles, no answer key). escalate when score >= threshold; random arms escalate when a draw from the question text is < rate.",
+  "thresholds": {
+    "jev-cascade-30": 0.55,
+    "jev-cascade-60": 0.38,
+    "jev-preroute-30": 0.88,
+    "random-30": 0.3,
+    "random-60": 0.6
+  },
+  "calibration_share": {
+    "jev-cascade-30": 0.3,
+    "jev-cascade-60": 0.605,
+    "jev-preroute-30": 0.28,
+    "random-30": 0.3,
+    "random-60": 0.6
+  }
+}
