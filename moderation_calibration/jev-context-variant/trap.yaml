@@ -1,0 +1,16 @@
+name: Jev, single Noul with named-field context
+cmd: uv run ../solution.py --mode jev-context-variant
+profile:
+  model: typesafe-jev-latest
+  framework: jev-context-variant
+  notes: >-
+    Identical to jev-single-choice's one Noul question, except `state` is a
+    named-field object ({comment, context_note}) that explicitly discloses
+    the one limitation this task withholds (no surrounding article/thread),
+    instead of a bare string. Tests whether naming that limitation in state
+    (per TypeSafe's own guidance on giving a question "policies, current
+    facts") changes calibration versus jev-single-choice's bare string.
+timeout: 60
+tasks:
+  moderation-calibration:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@8976d7ee1e6cc26be5177145d2db3dd5fe6d8f65#subdirectory=tasks/moderation_calibration
