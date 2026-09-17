@@ -1,0 +1,13 @@
+name: claude-alone
+cmd: uv run ../solution.py --arm claude-alone
+profile:
+  model:
+    - claude-sonnet-5
+  framework: claude-alone
+  notes: >-
+    Claude Sonnet 5 reads task.md and conversation.json and states a probability. No Jev. Claude at default settings; no refusal fallback (a refused case
+    gets no answer, counts as a failed case).
+timeout: 300
+tasks:
+  chatbot-reply-safety:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@37f026d51226e7dd62d3d832b7d6e32eaefe5630#subdirectory=tasks/chatbot_reply_safety

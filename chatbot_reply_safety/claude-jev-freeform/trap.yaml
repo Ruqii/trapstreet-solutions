@@ -1,0 +1,14 @@
+name: claude-jev-freeform
+cmd: uv run ../solution.py --arm claude-jev-freeform
+profile:
+  model:
+    - claude-sonnet-5
+    - jev-1.13.0
+  framework: claude-jev-freeform
+  notes: >-
+    Claude Sonnet 5 writes its own yes/no questions for Jev (jev-1.13.0) and chooses whether Jev sees the whole conversation or only the final response; at most 6 Jev calls. Claude at default settings; no refusal fallback (a refused case
+    gets no answer, counts as a failed case).
+timeout: 600
+tasks:
+  chatbot-reply-safety:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@37f026d51226e7dd62d3d832b7d6e32eaefe5630#subdirectory=tasks/chatbot_reply_safety

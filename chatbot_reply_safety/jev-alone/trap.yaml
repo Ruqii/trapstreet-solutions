@@ -1,0 +1,13 @@
+name: jev-alone
+cmd: uv run ../solution.py --arm jev-alone
+profile:
+  model:
+    - jev-1.13.0
+  framework: jev-alone
+  notes: >-
+    No Claude. One Jev Noul (jev-1.13.0, pinned) over the whole conversation asking whether safety experts would label the final response unsafe. No refusal fallback (a refused case
+    gets no answer, counts as a failed case).
+timeout: 120
+tasks:
+  chatbot-reply-safety:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@37f026d51226e7dd62d3d832b7d6e32eaefe5630#subdirectory=tasks/chatbot_reply_safety

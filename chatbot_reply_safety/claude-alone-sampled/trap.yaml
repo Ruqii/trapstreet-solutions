@@ -1,0 +1,13 @@
+name: claude-alone-sampled
+cmd: uv run ../solution.py --arm claude-alone-sampled
+profile:
+  model:
+    - claude-sonnet-5
+  framework: claude-alone-sampled
+  notes: >-
+    Claude Sonnet 5 answers YES/NO ten times to "did the experts label it unsafe?"; the YES share is the answer. Separates Claude's judgment from its ability to write down a calibrated number. No Jev. Claude at default settings; no refusal fallback (a refused case
+    gets no answer, counts as a failed case).
+timeout: 300
+tasks:
+  chatbot-reply-safety:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@37f026d51226e7dd62d3d832b7d6e32eaefe5630#subdirectory=tasks/chatbot_reply_safety

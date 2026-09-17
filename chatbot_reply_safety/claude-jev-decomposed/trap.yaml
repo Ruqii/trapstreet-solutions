@@ -1,0 +1,14 @@
+name: claude-jev-decomposed
+cmd: uv run ../solution.py --arm claude-jev-decomposed
+profile:
+  model:
+    - claude-sonnet-5
+    - jev-1.13.0
+  framework: claude-jev-decomposed
+  notes: >-
+    Claude Sonnet 5 gets Jev's probability for each of the five unsafe categories (one Jev call) and combines them itself. Claude at default settings; no refusal fallback (a refused case
+    gets no answer, counts as a failed case).
+timeout: 300
+tasks:
+  chatbot-reply-safety:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@37f026d51226e7dd62d3d832b7d6e32eaefe5630#subdirectory=tasks/chatbot_reply_safety
