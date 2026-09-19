@@ -1,0 +1,11 @@
+name: dsh + deepseek-flash
+cmd: bash ../dsh_run.sh
+profile:
+  model: deepseek-flash
+  framework: dsh
+  notes: >-
+    On the shared tool server (same-tools/tools.py: run_python, read_file, list_dir) and nothing else: this harness's own tools are off, and same-tools/probe_tools.py checks what it offered the model before the run is published. Same jail, same 1800 s, same cost proxy as every other arm. DSH 0.1.5-rc.1, stock headless profile with every tool plugin disabled and dsh-mcp-client mounted in their place.
+timeout: 1800
+tasks:
+  dabstep-shared-tools:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@07993beb95ed63bd1e052d794f7c30b7d8a53712#subdirectory=tasks/dabstep

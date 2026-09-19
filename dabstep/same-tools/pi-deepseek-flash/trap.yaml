@@ -1,0 +1,11 @@
+name: pi + deepseek-flash
+cmd: python3 ../pi_run.py --model deepseek/deepseek-flash --thinking high
+profile:
+  model: deepseek-flash
+  framework: pi
+  notes: >-
+    On the shared tool server (same-tools/tools.py: run_python, read_file, list_dir) and nothing else: this harness's own tools are off, and same-tools/probe_tools.py checks what it offered the model before the run is published. Same jail, same 1800 s, same cost proxy as every other arm. Pi 0.85.1 run headless (-p) with --no-builtin-tools; the tools arrive through a pi extension, since Pi has no MCP.
+timeout: 1800
+tasks:
+  dabstep-shared-tools:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@07993beb95ed63bd1e052d794f7c30b7d8a53712#subdirectory=tasks/dabstep
