@@ -126,7 +126,10 @@ def is_pi(path: Path) -> bool:
         head = json.loads(first)
     except json.JSONDecodeError:
         return False
-    return head.get("type") == "session" and "cwd" in head and "trap-case-" in head["cwd"]
+    # By shape, not by where the case ran: pi opens a session line with a version
+    # and a cwd, and the work directory differs per arm (tp shape acp's
+    # trap-case-*, or the jail's own work/).
+    return head.get("type") == "session" and "cwd" in head and isinstance(head.get("version"), int)
 
 
 def mini_loop(path: Path):
