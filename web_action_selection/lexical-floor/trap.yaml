@@ -1,0 +1,12 @@
+name: lexical-floor
+cmd: python3 solution.py
+profile:
+  framework: constant
+  notes: >-
+    Picks the element whose rendered text overlaps the goal most. No model, no
+    API call, no cost. The floor a real solution has to beat: 0.022 on the
+    46-case set, against 0.000 for every rule that ignores language entirely.
+timeout: 120
+tasks:
+  web-action-selection:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@3f9904a5#subdirectory=tasks/web_action_selection
