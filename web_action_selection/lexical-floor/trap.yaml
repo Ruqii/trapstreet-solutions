@@ -9,4 +9,4 @@ profile:
 timeout: 120
 tasks:
   web-action-selection:
-    source: git+https://github.com/trapstreet/trapstreet-tasks@3f9904a5#subdirectory=tasks/web_action_selection
+    source: git+https://github.com/trapstreet/trapstreet-tasks@3b04862f#subdirectory=tasks/web_action_selection
