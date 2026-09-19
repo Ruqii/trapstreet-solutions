@@ -61,6 +61,22 @@ TOOLS = ("Read Glob Grep Write Edit NotebookEdit Agent TaskCreate TaskUpdate Tas
          "Bash(python3:*) Bash(python:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cat:*) "
          "Bash(awk:*) Bash(sort:*) Bash(uniq:*) Bash(cut:*) Bash(tr:*) Bash(grep:*) Bash(jq:*) Bash(echo:*)")
 PROMPT_SUFFIX = "\n\nThe files are in the current working directory."
+#: The same-tools board: Claude Code's own tools are off and the three shared
+#: tools (same-tools/tools.py) are mounted over MCP, so what differs between two
+#: rows is the harness's loop, prompt and context handling, not its toolbox.
+#: Claude Code renames an MCP tool to mcp__<server>__<tool>; the server is "bench".
+#: Every tool this build offers, so the allowlist is the only thing left standing.
+#: The list is version-specific -- 2.1.266 ships Cron*, Workflow, Skill, SendMessage
+#: and the worktree pair on top of the classic set -- so same-tools/probe_tools.py
+#: prints what a run actually offered, and a row is only published once that is
+#: the three shared tools and nothing else.
+BUILTIN_TOOLS = ("Bash BashOutput KillShell Read Write Edit MultiEdit NotebookEdit Glob Grep "
+                 "WebSearch WebFetch Agent Task TaskCreate TaskUpdate TaskList TaskGet TodoWrite "
+                 "ExitPlanMode SlashCommand CronCreate CronDelete CronList EnterWorktree ExitWorktree "
+                 "ListAgents ReportFindings ScheduleWakeup SendMessage Skill Workflow "
+                 "AskUserQuestion SuggestSkills ListSkills SearchSkills Monitor TaskOutput TaskStop "
+                 "NotebookRead PushNotification RemoteTrigger SendUserFile Artifact DesignSync "
+                 "EnterPlanMode ToolSearch CronUpdate")
 MODEL_SLOTS = ("ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
                "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_FABLE_MODEL", "ANTHROPIC_SMALL_FAST_MODEL",
                "CLAUDE_CODE_SUBAGENT_MODEL")
@@ -88,6 +104,8 @@ def main() -> int:
     parser.add_argument("--auth", choices=["x-api-key", "bearer"], default="x-api-key",
                         help="bearer: ANTHROPIC_AUTH_TOKEN, with ANTHROPIC_API_KEY blanked")
     parser.add_argument("--all-slots", action="store_true", help="pin every model slot to --model")
+    parser.add_argument("--same-tools", action="store_true",
+                        help="replace Claude Code's tools with the shared MCP tools (same-tools board)")
     parser.add_argument("--env", action="append", default=[], metavar="KEY=VALUE",
                         help="an extra setting from the vendor's guide; applied last")
     args = parser.parse_args()
@@ -142,6 +160,20 @@ def main() -> int:
         "--allowedTools", TOOLS,
         "--disallowedTools", "WebSearch WebFetch",
     ]
+    if args.same_tools:
+        # The tools live in this repo, which the jail cannot read: they are copied
+        # into the case root, and Claude Code starts the server from there.
+        shutil.copytree(Path(__file__).resolve().parent / "same-tools", root / "tools")
+        config = root / "mcp.json"
+        config.write_text(json.dumps({"mcpServers": {"bench": {
+            "command": "python3", "args": [str(root / "tools/mcp_server.py")]}}}))
+        names = [t["name"] for t in json.loads(subprocess.run(
+            ["python3", str(root / "tools/tools.py"), "schema"], capture_output=True, text=True, check=True).stdout)]
+        cmd[-4:] = [  # --allowedTools and --disallowedTools, replaced
+            "--allowedTools", " ".join(f"mcp__bench__{n}" for n in names),
+            "--disallowedTools", BUILTIN_TOOLS,
+            "--mcp-config", str(config), "--strict-mcp-config",
+        ]
     port = sandbox.proxy_port(proxy)
     cmd = sandbox.wrap(cmd, root=root, readable=[Path(claude)], port=port)
     sandbox.attest(root=root, readable=[Path(claude)], port=port)
