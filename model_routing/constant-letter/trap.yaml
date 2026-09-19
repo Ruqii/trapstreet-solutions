@@ -1,0 +1,12 @@
+name: constant-letter
+cmd: sh -c 'echo "ANSWER: A"'
+profile:
+  framework: constant
+  notes: >-
+    Answers A for every question. No model, no API call, no cost. The floor:
+    the task's own README puts the best constant letter at 0.16. Exists to
+    exercise the runner, the judge and site grading end to end for free.
+timeout: 60
+tasks:
+  model-routing:
+    source: git+https://github.com/trapstreet/trapstreet-tasks@7f36c68b831fbc1454961ceab9bec4f2313bff22#subdirectory=tasks/model_routing
