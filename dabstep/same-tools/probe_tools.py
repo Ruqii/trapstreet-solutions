@@ -69,12 +69,17 @@ def main() -> int:
     tools = tool_definitions(fake.bodies)
     print(f"exit {proc.returncode}, {len(fake.bodies)} request(s), {len(tools)} tool(s) offered to the model\n")
     for tool in tools:
+        # Anthropic sends {name, description, input_schema}; OpenAI wraps the same
+        # three in {"type": "function", "function": {...}}, and a harness's format
+        # is its vendor's, not a difference this board is about.
+        tool = tool.get("function", tool)
         name = tool.get("name")
         schema = tool.get("input_schema") or tool.get("parameters") or {}
         print(f"  {name}\n    description: {' '.join(str(tool.get('description', '')).split())[:110]}"
               f"\n    schema: {json.dumps(schema, sort_keys=True)[:200]}")
-    shared = [t for t in tools if str(t.get("name", "")).endswith(("run_python", "read_file", "list_dir"))]
-    others = [t.get("name") for t in tools if t not in shared]
+    named = [t.get("function", t) for t in tools]
+    shared = [t for t in named if str(t.get("name", "")).endswith(("run_python", "read_file", "list_dir"))]
+    others = [t.get("name") for t in named if t not in shared]
     print(f"\n  shared tools offered: {[t.get('name') for t in shared]}")
     print(f"  anything else offered: {others or 'none'}")
 
