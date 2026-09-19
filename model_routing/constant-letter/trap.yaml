@@ -1,5 +1,5 @@
 name: constant-letter
-cmd: sh -c 'echo "ANSWER: A"'
+cmd: "sh -c 'echo \"ANSWER: A\"'"
 profile:
   framework: constant
   notes: >-
