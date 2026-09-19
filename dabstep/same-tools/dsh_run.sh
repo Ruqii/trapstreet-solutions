@@ -60,7 +60,10 @@ trap 'exit 143' INT TERM
 mkdir -p "$ROOT/work" "$ROOT/home" "$ROOT/tmp"
 cp -RL "$INPUTS"/. "$ROOT/work"/
 cp -R "$TEMPLATE" "$ROOT/dsh-home"
-cp -R "$HERE" "$ROOT/tools"                  # the jail cannot read this repo
+# The two files, never the directory: $HERE holds the arms, and an arm's .trap/
+# holds tp's checkout of the task -- every other case's question.
+mkdir -p "$ROOT/tools"
+cp "$HERE/tools.py" "$HERE/mcp_server.py" "$ROOT/tools"/
 
 # Every tool plugin the stock headless profile mounts, off; the shared tools on.
 # A plugin left on would be a tool this board says is not there.

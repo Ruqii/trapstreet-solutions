@@ -163,7 +163,14 @@ def main() -> int:
     if args.same_tools:
         # The tools live in this repo, which the jail cannot read: they are copied
         # into the case root, and Claude Code starts the server from there.
-        shutil.copytree(Path(__file__).resolve().parent / "same-tools", root / "tools")
+        # The two files, never the directory: same-tools/ holds the arms, and each
+        # arm's .trap/ holds tp's checkout of the task -- every other case's
+        # question, and the board's own notes. Copying the tree put all of that
+        # inside the jail (caught by audit_transcripts.py, 2026-09-19).
+        tools_dir = root / "tools"
+        tools_dir.mkdir()
+        for name in ("tools.py", "mcp_server.py"):
+            shutil.copy2(Path(__file__).resolve().parent / "same-tools" / name, tools_dir / name)
         config = root / "mcp.json"
         config.write_text(json.dumps({"mcpServers": {"bench": {
             "command": "python3", "args": [str(root / "tools/mcp_server.py")]}}}))

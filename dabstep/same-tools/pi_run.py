@@ -62,11 +62,15 @@ def main() -> int:
     root = sandbox.new_case_root("dabstep-pi-same-")
     workdir = root / "work"
     shutil.copytree(inputs, workdir, dirs_exist_ok=True)  # follows the symlinks: real copies
-    shutil.copytree(HERE, root / "tools")                 # the jail cannot read this repo
+    # The files the jail needs, never the directory: HERE holds the arms, and an
+    # arm's .trap/ holds tp's checkout of the task (every other case's question).
+    (root / "tools").mkdir()
+    for name in ("tools.py", "pi_extension.ts"):
+        shutil.copy2(HERE / name, root / "tools" / name)
     pi_acp.pi_config(root / "home", provider, model, args.thinking, proxy)
     extensions = root / "home/.pi/agent/extensions"
     extensions.mkdir(parents=True)
-    shutil.copy2(HERE / "pi_extension.ts", extensions / "bench.ts")
+    shutil.copy2(root / "tools/pi_extension.ts", extensions / "bench.ts")
 
     prompt = (workdir / "question.txt").read_text().rstrip() + pi_acp.PROMPT_SUFFIX
     env = {k: v for k, v in os.environ.items() if not k.startswith(pi_acp.VENDOR_PREFIXES)}

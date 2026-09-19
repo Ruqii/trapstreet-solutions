@@ -14,6 +14,8 @@ DSH's read/glob/bash/web_fetch, Pi's read/bash, mini-loop's run_python:
     the internet and to a loopback port that is not the cost proxy; exec
     pbpaste and osascript; list the key-like variables it can see, and any
     variable that names a place on this machine (TRAP_*, DIRENV_*, $HOME);
+  - it walks the case root for anything that does not belong there: a task
+    checkout, another run's workspace, an expected/ directory;
   - and the work a real case needs: read the case files, run pandas, write in
     the working directory and $HOME, reach the cost proxy.
 
@@ -111,6 +113,12 @@ out = {"forbid": {k: reach(v) for k, v in FORBID.items()},
        "exec": {"pbpaste": run(["/usr/bin/pbpaste"]), "osascript": run(["/usr/bin/osascript", "-e", "1"])},
        "need": {"case_file": reach("payments.csv"), "cwd_write": write("canary_write.txt"),
                 "home_write": write(os.path.join(os.environ.get("HOME", "."), "canary_write.txt"))},
+       "case_root": sorted(set(
+           os.path.relpath(os.path.join(r, n), os.path.dirname(os.getcwd()))
+           for r, ds, fs in os.walk(os.path.dirname(os.getcwd()))
+           for n in ds + fs
+           if any(part in (".trap", "repos", "expected") or "trapstreet-tasks" in part
+                  for part in os.path.relpath(os.path.join(r, n), os.path.dirname(os.getcwd())).split(os.sep)))),
        "keyish_env": sorted(k for k in os.environ if any(s in k for s in ("KEY", "TOKEN", "SECRET", "AUTH"))),
        "host_env": sorted(k for k, v in os.environ.items()
                           if k.startswith(("TRAP", "DIRENV_")) or REAL_HOME in v)}
@@ -359,6 +367,12 @@ def check(arm: str, case: Path, forbid: dict[str, str], decoy: Path, sibling: Pa
                     fail(f"needed {k}: {v}")
             if res["host_env"]:
                 fail(f"environment names this machine: {res['host_env']}")
+            # The jail's root is readable by everything in it, so whatever is
+            # copied in is inside the wall: a same-tools arm once copied the
+            # arms' directory, and with it tp's checkout of the task -- every
+            # other case's question (2026-09-19).
+            if res["case_root"]:
+                fail(f"the case root holds a task checkout or another run: {res['case_root'][:5]}")
             lines.append(f"   probe: forbid={sorted(set(res['forbid'].values()))} net={res['net']} "
                          f"exec={res['exec']} need={res['need']} keyish_env={res['keyish_env']}")
         else:
