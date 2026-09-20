@@ -98,9 +98,20 @@ def _inside(path: str) -> Path:
     return target
 
 
+#: All a snippet gets. Not the harness's environment: that carries the model
+#: API key and the cost proxy's address, and the proxy is a working, authenticated
+#: LLM endpoint inside the jail. On 2026-09-19 a pi row used them -- it listed the
+#: proxy's models, found a stronger one, and asked it for this benchmark's
+#: published answers. The jail cannot close that door (the port has to be open for
+#: metering) and neither can a deny list; the snippet simply never gets a key.
+SNIPPET_ENV = ("PATH", "HOME", "TMPDIR", "TMP", "TEMP", "LANG", "LC_ALL", "MPLCONFIGDIR",
+               "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "PYTHONHASHSEED")
+
+
 def run_python(code: str) -> str:
+    env = {k: os.environ[k] for k in SNIPPET_ENV if k in os.environ}
     proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
-                          timeout=SNIPPET_TIMEOUT_S, cwd=os.getcwd())
+                          timeout=SNIPPET_TIMEOUT_S, cwd=os.getcwd(), env=env)
     out = proc.stdout + (f"\n{proc.stderr}" if proc.stderr else "")
     if proc.returncode != 0:
         out += f"\n[exit status {proc.returncode}]"

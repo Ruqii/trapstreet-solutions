@@ -57,7 +57,10 @@ def main() -> int:
     outputs = Path(tempfile.mkdtemp(prefix="dabstep-probe-out-"))
     fake = Fake([])
     # One call to a shared tool, under both spellings a harness may use for it.
-    fake.steps = [(args.call, {}), (f"mcp__bench__{args.call}", {})]
+    leak_check = ("import os;print('CREDS', [k for k in os.environ "
+                  "if any(s in k for s in ('API_KEY','AUTH_TOKEN','BASE_URL'))])")
+    fake.steps = [(args.call, {}), (f"mcp__bench__{args.call}", {}),
+                  (f"mcp__bench__run_python", {"code": leak_check})]
     env = {k: v for k, v in os.environ.items()
            if not k.endswith(("_API_KEY", "_AUTH_TOKEN", "_BASE_URL")) and not k.startswith(("CLAUDE", "TRAP"))}
     env.update({args.url_env: f"http://127.0.0.1:{fake.port}", args.key_env: "sk-probe",
@@ -88,6 +91,11 @@ def main() -> int:
         if got:
             is_error, text = got
             print(f"  call {step_name}: {'error ' if is_error else ''}{' '.join(text.split())[:120]!r}")
+    creds = next((t for _, t in fake.results.values() if "CREDS" in (t or "")), "")
+    if creds:
+        found = creds[creds.index("CREDS") + 6:].strip().splitlines()[0]
+        print(f"  credentials a snippet can see: {found}"
+              + ("" if found.startswith("[]") else "   <-- FAIL: a snippet can reach the cost proxy as this run"))
     if args.save:
         args.save.write_text(json.dumps(tools, indent=2, sort_keys=True))
         print(f"\n  tool definitions written to {args.save}")
