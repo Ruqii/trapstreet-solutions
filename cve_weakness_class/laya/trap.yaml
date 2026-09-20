@@ -1,0 +1,17 @@
+name: laya
+cmd: /Users/zhengruqi/Documents/Projects/replicas/laya/.venv/bin/python ../laya_arm.py
+profile:
+  model:
+    - convaiinnovations/laya (typed-decisions, 421M)
+  framework: laya-mlx
+  notes: >-
+    Laya, a 421M purpose-trained typed-decision model, run locally on Apple
+    Silicon through mizorewww/laya-mlx. Same shape as the jev arm -- state plus
+    one Choice over the 30 options delivered with the case -- pointed at an open
+    replica instead. Local compute, so no API cost is metered and none is
+    self-reported; the cost columns stay empty rather than carry a figure nobody
+    measured.
+timeout: 180
+tasks:
+  cve-weakness-class:
+    source: git+https://github.com/trapstreet/decision-layer-bench@0454940c1a0e0afb9047e1e6b1ab13ab489a335b#subdirectory=tasks/cve_weakness_class
