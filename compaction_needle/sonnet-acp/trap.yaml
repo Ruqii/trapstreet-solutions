@@ -1,0 +1,19 @@
+name: sonnet-acp
+cmd: tp shape acp --agent-id claude-acp --model sonnet --prompt-file task.md
+     --agent-cmd "npx -y @agentclientprotocol/claude-agent-acp@0.76.0"
+profile:
+  model: claude-sonnet-5
+  framework: claude-code-acp
+  notes: >-
+    The ceiling arm. A capable agent reads the case directory itself -- the
+    rules in task.md and the session in transcript.txt -- and returns the
+    compaction. It exists to say what score is reachable at all: without it a
+    compaction layer's number cannot be read, because "the layer is weak" and
+    "these cases are too hard for anything" look identical. No skill, no plugin,
+    no tools beyond the agent's own; settingSources is "project", so the runner's
+    own CLAUDE.md, skills and plugins stay out and the card means the same thing
+    on any machine.
+timeout: 1800
+tasks:
+  compaction-needle:
+    source: ../../../trapstreet-tasks/tasks/compaction_needle
