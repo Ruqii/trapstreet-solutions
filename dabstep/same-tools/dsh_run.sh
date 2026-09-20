@@ -9,14 +9,31 @@
 # model the same names. What each offers is not taken on trust: run
 # same-tools/probe_tools.py against this script and read the tool list it prints.
 #
-#   MODEL=deepseek-flash bash dsh_run.sh
+#   bash dsh_run.sh [--model deepseek/deepseek-flash | anthropic/claude-opus-5]
 set -uo pipefail
 
+# --model <provider>/<id>: deepseek is DSH's own route, anthropic goes through
+# its dsh-llm-pi-ai adapter (the overlay below), as dsh + claude-opus-5 does on
+# the as-shipped board. Everything else about the arm is identical either way.
+MODEL="deepseek/deepseek-flash"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --model) MODEL="$2"; shift 2 ;;
+        *) echo "unknown argument: $1" >&2; exit 2 ;;
+    esac
+done
+PROVIDER="${MODEL%%/*}"; MODEL_ID="${MODEL#*/}"
+case "$PROVIDER" in
+    deepseek) KEY_VAR=DEEPSEEK_API_KEY; URL_VAR=DEEPSEEK_BASE_URL ;;
+    anthropic) KEY_VAR=ANTHROPIC_API_KEY; URL_VAR=ANTHROPIC_BASE_URL ;;
+    *) echo "--model must be deepseek/<id> or anthropic/<id>, got $MODEL" >&2; exit 2 ;;
+esac
+
 : "${TRAP_MANIFEST:?run under trap}"
-: "${DEEPSEEK_API_KEY:?DEEPSEEK_API_KEY must be in the shell that runs tp (dabstep/.env via direnv)}"
-case "${DEEPSEEK_BASE_URL:-}" in
+[ -n "${!KEY_VAR:-}" ] || { echo "$KEY_VAR must be in the shell that runs tp (dabstep/.env via direnv)" >&2; exit 2; }
+case "${!URL_VAR:-}" in
     http://127.0.0.1:*|http://localhost:*) ;;
-    *) echo "DEEPSEEK_BASE_URL is not the tp cost proxy; load dabstep/.env (direnv allow) before tp run" >&2; exit 2 ;;
+    *) echo "$URL_VAR is not the tp cost proxy; load dabstep/.env (direnv allow) before tp run" >&2; exit 2 ;;
 esac
 
 HERE=$(cd "$(dirname "$0")" && pwd)          # dabstep/same-tools
@@ -41,14 +58,14 @@ if [ ! -d "$TEMPLATE/profiles/headless" ]; then
         && DSH_HOME="$TEMPLATE" DSH_AGENTS_HOME="$TEMPLATE/agents" \
            "$DSH" --profile headless --dump-config >/dev/null 2>&1 || exit 1
 fi
-echo "{\"event\": \"start\", \"dsh\": \"$("$DSH" --version 2>/dev/null)\", \"lock\": \"$LOCK_ID\", \"tools\": \"same-tools over MCP\"}" >&2
+echo "{\"event\": \"start\", \"dsh\": \"$("$DSH" --version 2>/dev/null)\", \"lock\": \"$LOCK_ID\", \"model\": \"$MODEL\", \"tools\": \"same-tools over MCP\"}" >&2
 
 { read -r INPUTS; read -r OUTPUTS; read -r PORT; } < <(python3 -c '
 import json, os, sys
 sys.path.insert(0, sys.argv[1])
 import sandbox
 m = json.loads(os.environ["TRAP_MANIFEST"])
-print(m["inputs_dir"], m["outputs_dir"], sandbox.proxy_port(os.environ["DEEPSEEK_BASE_URL"]), sep="\n")' "$ARMS")
+print(m["inputs_dir"], m["outputs_dir"], sandbox.proxy_port(os.environ[sys.argv[2]]), sep="\n")' "$ARMS" "$URL_VAR")
 [ -n "${PORT:-}" ] || exit 1
 ROOT=$(cd "$(mktemp -d "$TMP/dabstep-dsh-same.XXXXXXXX")" && pwd -P)
 keep() {
@@ -112,10 +129,33 @@ cat > "$ROOT/dsh-home/same-tools.patch.yml" <<PATCH
         cwd: '$ROOT/work'
 PATCH
 
+if [ "$PROVIDER" = anthropic ]; then
+    # DSH's own multi-provider adapter, given one route (the cost proxy, whose
+    # upstream is this arm's .envrc) and made the default: the same overlay the
+    # as-shipped dsh + claude-opus-5 arm uses, so the two differ in tools only.
+    cat >> "$ROOT/dsh-home/same-tools.patch.yml" <<PATCH
+- id: llm-pi-ai
+  config:
+    providers:
+      anthropic:
+        apiKeyEnv: ANTHROPIC_API_KEY
+        baseURL: !!js process.env.ANTHROPIC_BASE_URL
+        reasoning: high
+- id: agent-default-model
+  config:
+    provider: anthropic
+    model: $MODEL_ID
+PATCH
+fi
+
 export DSH_HOME="$ROOT/dsh-home"
 export DSH_AGENTS_HOME="$DSH_HOME/agents"
 export DSH_PERMISSION_MODE=danger-full-access   # sandboxes do not nest; the jail confines it
-unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL
+if [ "$PROVIDER" = anthropic ]; then
+    unset DEEPSEEK_API_KEY DEEPSEEK_BASE_URL   # the model is Opus; no request may go elsewhere
+else
+    unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL
+fi
 
 PROMPT="$(cat "$ROOT/work/question.txt")
 
