@@ -1,0 +1,16 @@
+name: jev
+cmd: uv run ../solution.py --arm jev
+profile:
+  model:
+    - jev-1.13.0
+  framework: jev
+  notes: >-
+    One Jev Choice (jev-1.13.0, pinned) over the 30 CWE options delivered with
+    the case, no LLM anywhere in the loop. Prints the class and the confidence
+    behind it; confidence is recorded by the task and never scored. Jev is not
+    metered by tp's cost proxy, so the arm self-reports input-token spend at
+    $0.042/Mtok.
+timeout: 120
+tasks:
+  cve-weakness-class:
+    source: git+https://github.com/trapstreet/decision-layer-bench@0454940c1a0e0afb9047e1e6b1ab13ab489a335b#subdirectory=tasks/cve_weakness_class
