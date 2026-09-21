@@ -1,0 +1,16 @@
+name: lexical
+cmd: python3 ../lexical_arm.py
+profile:
+  model:
+    - none (word overlap)
+  framework: lexical
+  notes: >-
+    No model. Picks the option whose name shares the largest share of its own
+    words with the description. It states no confidence, so the calibration
+    column is empty for it by construction -- a matcher that reads no meaning
+    has no certainty to report. On the board as the line an arm has to clear
+    before its score is evidence of anything.
+timeout: 60
+tasks:
+  cve-weakness-class:
+    source: git+https://github.com/trapstreet/decision-layer-bench@0454940c1a0e0afb9047e1e6b1ab13ab489a335b#subdirectory=tasks/cve_weakness_class

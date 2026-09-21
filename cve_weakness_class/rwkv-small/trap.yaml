@@ -1,0 +1,16 @@
+name: rwkv-small
+cmd: python3 ../simplejev_arm.py --model featherless-ai/RWKV-small-classifier
+profile:
+  model:
+    - featherless-ai/RWKV-small-classifier
+  framework: simple-jev
+  notes: >-
+    featherless-ai/simple-jev reads an off-the-shelf open model's next-token
+    logits over the supplied options, turning it into a Jev-shaped classifier
+    without training a head. Run against Featherless's hosted demo, which takes
+    no API key, so nothing is billed and no cost is self-reported. Held under
+    the demo's documented 2 RPS.
+timeout: 180
+tasks:
+  cve-weakness-class:
+    source: git+https://github.com/trapstreet/decision-layer-bench@0454940c1a0e0afb9047e1e6b1ab13ab489a335b#subdirectory=tasks/cve_weakness_class
