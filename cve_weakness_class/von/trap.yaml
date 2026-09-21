@@ -1,0 +1,20 @@
+name: von
+cmd: python3 ../von_arm.py
+profile:
+  model:
+    - wfzyx/von-1.0
+  framework: von
+  notes: >-
+    Von, a 395M ModernBERT cross-encoder trained as an open System One model,
+    run locally on Apple Silicon through its own HTTP server. For each of the
+    30 options it scores an NLI pair -- the CVE description against that
+    option's text -- and softmaxes the entailment logits across options. The
+    CONFIDENCE line carries max(probabilities), the quantity Jev reports, not
+    von's own `.confidence`, which is the top-two margin and is printed
+    separately as VON_MARGIN. Run as von-sdk 1.0.1 ships it, including its
+    calibration temperature never reaching this path. Local compute, so no
+    cost is metered and none is self-reported.
+timeout: 300
+tasks:
+  cve-weakness-class:
+    source: git+https://github.com/trapstreet/decision-layer-bench@0454940c1a0e0afb9047e1e6b1ab13ab489a335b#subdirectory=tasks/cve_weakness_class
