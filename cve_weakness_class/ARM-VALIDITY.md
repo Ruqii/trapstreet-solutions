@@ -35,13 +35,17 @@ The diagnosis. Same 30 options in the same order the graded runs saw, with a
 state that contains nothing to classify. An arm whose answer here matches what
 it says about real vulnerability text is not classifying vulnerability text.
 
-| state | RWKV-small | RWKV-mid | RWKV-std | Qwen3.8-27B | Qwen3.6-35B-A3B |
-| --- | --- | --- | --- | --- | --- |
-| `.` | CWE-787 · 0.469 | CWE-476 · 0.173 | CWE-121 · 0.117 | CWE-20 · 0.857 | CWE-20 · 0.986 |
-| *the quick brown fox…* | CWE-787 · 0.481 | CWE-121 · 0.171 | CWE-125 · 0.171 | CWE-20 · 0.883 | CWE-20 · 0.989 |
-| *combine the flour, sugar…* | CWE-787 · 0.460 | CWE-787 · 0.175 | CWE-416 · 0.092 | CWE-20 · 0.819 | CWE-20 · 0.992 |
-| *tomorrow will be cloudy…* | CWE-787 · 0.433 | CWE-787 · 0.159 | CWE-79 · 0.169 | CWE-20 · 0.871 | CWE-20 · 0.891 |
-| **modal answer on the real 1500** | **CWE-787 · 0.443** | CWE-476 (33%) | CWE-787 (35%) | CWE-284 (10%) | CWE-284 (11%) |
+| state | RWKV-small | RWKV-mid | RWKV-std | Qwen3.8-27B | Qwen3.6-35B-A3B | von-1.0 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `.` | CWE-787 · 0.469 | CWE-476 · 0.173 | CWE-121 · 0.117 | CWE-20 · 0.857 | CWE-20 · 0.986 | CWE-94 · 0.071 |
+| *the quick brown fox…* | CWE-787 · 0.481 | CWE-121 · 0.171 | CWE-125 · 0.171 | CWE-20 · 0.883 | CWE-20 · 0.989 | CWE-362 · 0.282 |
+| *combine the flour, sugar…* | CWE-787 · 0.460 | CWE-787 · 0.175 | CWE-416 · 0.092 | CWE-20 · 0.819 | CWE-20 · 0.992 | CWE-416 · 0.129 |
+| *tomorrow will be cloudy…* | CWE-787 · 0.433 | CWE-787 · 0.159 | CWE-79 · 0.169 | CWE-20 · 0.871 | CWE-20 · 0.891 | CWE-416 · 0.399 |
+| **modal answer on the real 1500** | **CWE-787 · 0.443** | CWE-476 (33%) | CWE-787 (35%) | CWE-284 (10%) | CWE-284 (11%) | *run in flight* |
+
+Von's confidence column here is `max(probabilities)`, the same quantity as every
+other arm's — not its own `.confidence`, which is the top-two margin. See
+`von_arm.py` for why the two must not be mixed in a calibration column.
 
 **RWKV-small fails.** Four inputs with no vulnerability in them return the label
 it returns on 89% of real CVE descriptions, at the confidence it reports there.
@@ -63,6 +67,17 @@ Input Validation at 99%. Both read the input where there is one (30/30 labels,
 modal 10–11%) and assert a catch-all where there is not, and the bigger model
 asserts it harder. That is the same axis their board rows differ on: 0.744 at
 +0.104 overconfidence versus 0.739 at +0.191.
+
+**von-1.0 passes, and passes best.** Three labels across four nulls at a top
+probability of 0.07–0.40 — the only arm that meets content-free input by
+spreading its mass rather than picking something. It is worth saying what this
+is not evidence of: a model can decline to commit on a weather forecast and
+still be wrong about CVEs. The control rules out one failure, not all of them.
+What makes the contrast worth recording is that von's model card sells
+calibration as the feature, and the calibration temperature it names
+(T = 1.1692) never reaches this code path in von-sdk 1.0.1 — `_default_temp` is
+assigned three times and read nowhere. Whatever calibration shows up in its
+board row is the training, not the temperature.
 
 ## 3. A K-ladder must hold the menu fixed
 
