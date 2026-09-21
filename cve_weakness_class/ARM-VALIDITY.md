@@ -18,6 +18,7 @@ grep '^ANSWER:' case_*/solution/stdout | sort | uniq -c | sort -rn
 | jev-1.13.0 | 0.745 | 30/30 | CWE-284 · 85 (5.7%) |
 | Qwen3.8-27B-classifier | 0.744 | 30/30 | CWE-284 · 153 (10.2%) |
 | Qwen3.6-35B-A3B-classifier | 0.739 | 30/30 | CWE-284 · 171 (11.4%) |
+| wfzyx/von-1.0 | 0.522 | 30/30 | CWE-200 · 413 (27.5%) |
 | word-overlap (floor) | 0.478 | 30/30 | CWE-502 · 113 (7.5%) |
 | laya-typed-decisions-421M | 0.266 | 23/30 | CWE-306 · 212 (14.1%) |
 | RWKV-std-classifier | 0.229 | 17/30 | CWE-787 · 525 (35.0%) |
@@ -41,7 +42,7 @@ it says about real vulnerability text is not classifying vulnerability text.
 | *the quick brown fox…* | CWE-787 · 0.481 | CWE-121 · 0.171 | CWE-125 · 0.171 | CWE-20 · 0.883 | CWE-20 · 0.989 | CWE-362 · 0.282 |
 | *combine the flour, sugar…* | CWE-787 · 0.460 | CWE-787 · 0.175 | CWE-416 · 0.092 | CWE-20 · 0.819 | CWE-20 · 0.992 | CWE-416 · 0.129 |
 | *tomorrow will be cloudy…* | CWE-787 · 0.433 | CWE-787 · 0.159 | CWE-79 · 0.169 | CWE-20 · 0.871 | CWE-20 · 0.891 | CWE-416 · 0.399 |
-| **modal answer on the real 1500** | **CWE-787 · 0.443** | CWE-476 (33%) | CWE-787 (35%) | CWE-284 (10%) | CWE-284 (11%) | *run in flight* |
+| **modal answer on the real 1500** | **CWE-787 · 0.443** | CWE-476 (33%) | CWE-787 (35%) | CWE-284 (10%) | CWE-284 (11%) | CWE-200 (28%) |
 
 Von's confidence column here is `max(probabilities)`, the same quantity as every
 other arm's — not its own `.confidence`, which is the top-two margin. See
@@ -99,3 +100,43 @@ RWKV-small pins one label at every width, and *which* label changes with the
 menu — 787 → 120 → 121 → 400. Qwen spreads further as the menu widens, which is
 what a classifier reading the state does. The collapse is not about K=30 being
 wide.
+
+
+## 4. What K=30 costs, by architecture
+
+Von's card advertises sub-18ms decisions. On this task it ran at a 3.19s
+median. That gap is not a Mac tax, and the run's own 1500 cases say where it
+goes.
+
+Von is a cross-encoder: premise and hypothesis are attended jointly, so nothing
+can be cached across options, and the state is re-encoded once per option.
+Measured against the idle server on one 677-character case, latency is linear
+in K —
+
+```
+K= 1    708 ms      K=10   5727 ms
+K= 2   1253 ms      K=20  12429 ms
+K= 5   2886 ms      K=30  10110 ms
+```
+
+— and per-case cost scales with how long the description is, because that text
+is duplicated into all 30 pairs. Binned over the whole run:
+
+| description | cases | median case | per option |
+| --- | --- | --- | --- |
+| 81–191 chars | 300 | 1.67 s | 56 ms |
+| 191–278 | 300 | 2.12 s | 71 ms |
+| 279–414 | 300 | 2.65 s | 88 ms |
+| 415–627 | 300 | 4.05 s | 135 ms |
+| 628–2000 | 300 | 6.50 s | 217 ms |
+
+So the cost is K × f(state length), and this task sets K = 30.
+
+Laya, 421M on the same machine, ran at a 2535ms median *while reloading its
+weights for every case* — because it is a decision head over a frozen encoder:
+encode the state once, score all 30 options off that one representation, O(1)
+forward passes. Same size, same hardware, different asymptote.
+
+Von's own README already concedes the shape: it recommends "Two-Stage Routing"
+for taxonomies above 25 options. Its answer to K = 30 is not to do it in one
+pass. This board measures the one-pass call, which is the call its API offers.
