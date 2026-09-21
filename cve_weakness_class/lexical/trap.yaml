@@ -2,7 +2,7 @@ name: lexical
 cmd: python3 ../lexical_arm.py
 profile:
   model:
-    - none (word overlap)
+    - word-overlap
   framework: lexical
   notes: >-
     No model. Picks the option whose name shares the largest share of its own

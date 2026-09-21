@@ -2,7 +2,7 @@ name: laya
 cmd: /Users/zhengruqi/Documents/Projects/replicas/laya/.venv/bin/python ../laya_arm.py
 profile:
   model:
-    - convaiinnovations/laya (typed-decisions, 421M)
+    - convaiinnovations/laya-typed-decisions-421M
   framework: laya-mlx
   notes: >-
     Laya, a 421M purpose-trained typed-decision model, run locally on Apple
