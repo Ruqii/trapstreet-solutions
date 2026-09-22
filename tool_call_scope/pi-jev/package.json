@@ -1,0 +1,8 @@
+{
+  "name": "tool-call-scope-pi-jev",
+  "private": true,
+  "description": "pi-jev's peer dependency, pinned. config.ts imports two path constants from it; installing it rather than stubbing keeps the product's own module loading for real.",
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "0.87.1"
+  }
+}

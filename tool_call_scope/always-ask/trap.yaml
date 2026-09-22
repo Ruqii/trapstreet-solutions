@@ -1,0 +1,15 @@
+name: always-ask
+cmd: python3 ../floor_arm.py --arm always-ask
+profile:
+  model:
+    - always ask
+  framework: no model
+  notes: >-
+    No model, no reading. Hands every call back to the user. It is on the board
+    because it ranks near the top by score -- refusing is the right answer on
+    two of the three classes -- while interrupting every legitimate call. The
+    three rate columns are what say so; the ranked number cannot.
+timeout: 60
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope

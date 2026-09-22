@@ -7,3 +7,4 @@ __pycache__/
 
 # clone_to target for session_memory_recall (a full clone of trapstreet-tasks)
 session_memory_recall/*/task/
+node_modules/
