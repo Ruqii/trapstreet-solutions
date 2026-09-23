@@ -1,0 +1,23 @@
+name: jev-engineering-llm
+cmd: python3 arm.py
+profile:
+  model:
+    - claude-sonnet-5
+    - jev-1.13.0
+  framework: jev-engineering layer.py rank, as an LLM tool
+  notes: >-
+    The fourth product in this shape, and the only one whose gate row measures a
+    different component of the same project: that row is `jev_gate.py`, a
+    permission gate; this one is `layer.py rank`, which orders options against
+    a criterion. They are not a before-and-after of the same thing, so unlike
+    the jev-use, jev-guard and jevwire pairs this one does not license that
+    comparison. `rank` is one of three subcommands -- `route` picks a model
+    tier, `keep` decides what stays in a context -- and the only one whose unit
+    is a decision about this case; the other two are exposed to nothing,
+    because a tool the model cannot use measures nothing. Vendored verbatim
+    under MIT with its sha256s and source commit: it publishes no package, and
+    layer.py needs jev_gate and policy beside it.
+timeout: 300
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope
