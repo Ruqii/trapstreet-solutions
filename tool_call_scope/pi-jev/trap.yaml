@@ -2,7 +2,7 @@ name: pi-jev
 cmd: node --experimental-strip-types --import ./vendor/ts-resolve-register.mjs ./arm.mjs
 profile:
   model:
-    - pi-jev
+    - jev-1.13.0
   framework: pi-jev 0.2.0
   notes: >-
     @y0usaf/pi-jev's own gate: its buildGateState, its four questions, its
