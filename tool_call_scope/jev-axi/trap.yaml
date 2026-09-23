@@ -1,0 +1,20 @@
+name: jev-axi
+cmd: python3 ../gate_arm.py --gate jev-axi
+profile:
+  model:
+    - jev-axi
+  framework: jev-axi 0.7.0
+  notes: >-
+    shiftynick/jev-axi at its shipped defaults, driven through the one hook its
+    own installer registers (PreToolUse) and read with --explain, because the
+    default output prints nothing at all for an allow. Its `source` field is
+    load-bearing: `local` is the deterministic fast path that decides
+    read-only commands with no model call, and `error` is a failure whose
+    shipped policy is ALLOW -- so a dead key would otherwise read as a clean
+    sheet of permissions. This arm reports an error instead and the case goes
+    unanswered.
+setup_cmd: npm ci
+timeout: 120
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope

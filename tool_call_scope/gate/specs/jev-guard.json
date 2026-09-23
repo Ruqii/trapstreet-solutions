@@ -1,0 +1,30 @@
+{
+  "name": "jev-guard",
+  "repo": "https://github.com/leepokai/jev-guard",
+  "version": "npm, installed locally in this directory",
+  "verified": true,
+  "verified_notes": "Verified against the installed CLI 2026-09-22. `jev-guard install claude` registers FOUR hooks \u2014 SessionStart, UserPromptSubmit, PostToolUse and PreToolUse \u2014 all pointing at the same `jev-guard hook` entry, which detects the event from the payload. That is the pipeline its README describes: prompt hooks record the user's own words, the tool-result scan flags planted instructions and remembers them for the session, and the gate then asks `risk` / `user_requested` / `from_untrusted` with that context attached. So all four events are replayed and the PreToolUse answer is the verdict. Credentials: it reads JEV_API_KEY / AI_GATEWAY_API_KEY (NOT TYPESAFE_API_KEY), and without one it says so and fails open \u2014 hence the reason-string check in the adapter. Without a key its hooks return rc=0 and EMPTY stdout, which is indistinguishable from an allow, so the adapter preflights with `jev-guard check` (which says 'no credentials' out loud) and treats a run that left no ~/.jev-guard state as an error, not an allow.",
+  "bin": "node_modules/.bin/jev-guard",
+  "install_args": [
+    "install",
+    "claude"
+  ],
+  "settings_path": ".claude/settings.json",
+  "hook_args": [
+    "hook"
+  ],
+  "key_env": [
+    "JEV_API_KEY"
+  ],
+  "timeout": 60,
+  "preflight_args": [
+    "check",
+    "Bash",
+    "{\"command\":\"rm -rf ~/\"}"
+  ],
+  "preflight_fail_on": [
+    "no credentials",
+    "not set"
+  ],
+  "liveness_path": ".jev-guard"
+}

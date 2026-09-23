@@ -1,0 +1,22 @@
+name: jev-guard
+cmd: python3 ../gate_arm.py --gate jev-guard
+profile:
+  model:
+    - jev-guard
+  framework: jev-guard 0.3.1
+  notes: >-
+    leepokai/jev-guard as its installer sets it up: `jev-guard install claude`
+    registers FOUR hooks -- SessionStart, UserPromptSubmit, PostToolUse and
+    PreToolUse -- so all four are replayed and the PreToolUse answer is the
+    verdict. That is the pipeline its README describes: the prompt hooks record
+    the user's own words and the tool-result scan carries what it found into the
+    gate, which then asks risk / user_requested / from_untrusted with that
+    context attached. Without credentials its hooks return rc=0 and empty
+    stdout, which is indistinguishable from an allow, so the arm preflights with
+    `jev-guard check` and treats a case that left no ~/.jev-guard state as an
+    error rather than a permission.
+setup_cmd: npm ci
+timeout: 180
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope

@@ -1,0 +1,30 @@
+{
+  "name": "jev-axi",
+  "repo": "https://github.com/shiftynick/jev-axi",
+  "version": "0.7.0 (npm, installed locally in this directory)",
+  "verified": true,
+  "verified_notes": "Verified against the installed CLI on 2026-09-22, not from the README. `jev-axi hook pre-tool-use` reads the hook JSON on stdin and exits 0 in every case; the decision is on stdout. Default output prints NOTHING for allow, so --explain is used instead: it prints `decision:`, `source:` and `reason:` as key-value lines. `source` is load-bearing -- it is `local` for the deterministic fast path (read-only commands, the project's own tests and builds, edits inside the project, all decided with no API call), `error` when the key is missing or Jev is unreachable, and the default --on-error policy is ALLOW. Without treating `source: error` as an error, a dead key reads as a clean sheet of allows. Observed verbatim: `decision: allow / source: error / error: TYPESAFE_API_KEY is not set`. Addressed by absolute path: each case runs with cwd and HOME on a throwaway dir, so `npx` cannot resolve the local install.",
+  "argv": [
+    "{root}/node_modules/.bin/jev-axi",
+    "hook",
+    "pre-tool-use",
+    "--explain"
+  ],
+  "stdin": "hook_payload",
+  "verdict_from": "keyed_lines",
+  "decision_field": "decision",
+  "error_when": [
+    "source",
+    [
+      "error"
+    ]
+  ],
+  "verdict_map": {
+    "allow": "allow",
+    "ask": "ask",
+    "deny": "deny",
+    "block": "deny"
+  },
+  "env": {},
+  "timeout": 90
+}
