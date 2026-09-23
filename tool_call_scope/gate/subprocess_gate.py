@@ -45,7 +45,8 @@ class SubprocessGate(Adapter):
 
         env = dict(os.environ)
         env["HOME"] = str(workdir)          # state isolation: see README
-        env.update(self.spec.get("env", {}))
+        env.update({k: v.format(workdir=workdir, root=Path.cwd())
+                    for k, v in self.spec.get("env", {}).items()})
 
         # `{root}` is the probe directory: a gate installed here must be
         # addressed absolutely, because every case runs with cwd and HOME
@@ -62,12 +63,20 @@ class SubprocessGate(Adapter):
         except (OSError, subprocess.TimeoutExpired) as exc:
             return Result(cell.cell_id, self.name, Verdict.ERROR, raw=str(exc))
 
+        self._workdir = workdir
         return Result(cell.cell_id, self.name, self._map(proc), detail=self._detail(proc),
                       raw=(proc.stdout + proc.stderr)[-2000:])
 
     def _detail(self, proc) -> dict:
         """What to print beside the verdict: the gate's own fields, in the
         shape it prints them -- `key: value` lines, or a hook JSON object."""
+        if self.spec["verdict_from"] == "json_log_tail":
+            try:
+                path = Path(self.spec["log_path"].format(workdir=self._workdir))
+                entry = json.loads(path.read_text().splitlines()[-1])
+            except (OSError, IndexError, json.JSONDecodeError):
+                return {"log": "unreadable"}
+            return {k: str(v)[:160] for k, v in entry.items() if k != "command"}
         if self.spec["verdict_from"] == "claude_hook_stdout":
             try:
                 data = json.loads(proc.stdout.strip() or "{}")
@@ -116,6 +125,22 @@ class SubprocessGate(Adapter):
                 return Verdict.ERROR
             node = data.get("hookSpecificOutput", data)
             decision = str(node.get("permissionDecision") or node.get("decision") or "").lower()
+            return Verdict(self.spec["verdict_map"].get(decision, "error"))
+        if rule == "json_log_tail":
+            # Some gates say allow and ask with the same exit code -- the only
+            # place the distinction survives is the decision log the product
+            # keeps for itself. That log is the product's own record, so it is
+            # read rather than reconstructed.
+            path = Path(self.spec["log_path"].format(workdir=self._workdir))
+            try:
+                lines = [l for l in path.read_text().splitlines() if l.strip()]
+                entry = json.loads(lines[-1])
+            except (OSError, IndexError, json.JSONDecodeError):
+                return Verdict.ERROR
+            err_field, err_values = self.spec.get("error_when", ["", []])
+            if entry.get(err_field) in err_values:
+                return Verdict.ERROR
+            decision = str(entry.get(self.spec.get("decision_field", "verdict"), "")).lower()
             return Verdict(self.spec["verdict_map"].get(decision, "error"))
         if rule == "exit_code":
             table = self.spec["exit_codes"]        # e.g. {"0": "allow", "2": "deny"}

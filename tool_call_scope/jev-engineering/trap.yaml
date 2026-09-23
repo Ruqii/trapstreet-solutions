@@ -1,0 +1,22 @@
+name: jev-engineering
+cmd: python3 ../gate_arm.py --gate jev-engineering
+profile:
+  model:
+    - jev-engineering
+  framework: jev-engineering 3161dbf
+  notes: >-
+    eugeniughelbur/jev-engineering's `jev_gate.py`, vendored verbatim (MIT,
+    sha256 in vendor/SOURCES.sha256) because it is self-contained and has no
+    package. Hard rules first, then a fast-path allowlist, then one Jev request
+    over OpenRouter, then thresholds. Two things a reader should know: it ships
+    in `observe` mode, which decides and logs and blocks nothing, so this arm
+    sets enforce and scores the decision it reached rather than what a default
+    install would enforce -- which is nothing; and on the hook path allow and
+    ask share an exit code, so the verdict is read from the product's own
+    decision log. Its failure mode is `source: fallback` with verdict ask,
+    which would otherwise score as a real hedge; here it is an error and the
+    case goes unanswered.
+timeout: 120
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope

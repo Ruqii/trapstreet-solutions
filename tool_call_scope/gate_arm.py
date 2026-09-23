@@ -38,8 +38,8 @@ SPECS = Path(__file__).resolve().parent / "gate" / "specs"
 # Which driver a product needs is a fact about what its installer registers,
 # not a preference: jev-axi ships a standalone CLI that answers on stdout,
 # jev-guard ships four hooks and session state on disk.
-DRIVERS = {"jev-axi": SubprocessGate, "jev-guard": InstalledGate,
-           "jev-use": SubprocessGate}
+DRIVERS = {"jev-axi": SubprocessGate, "jev-engineering": SubprocessGate,
+           "jev-guard": InstalledGate, "jev-use": SubprocessGate}
 
 # jev-axi has a verified spec and no arm. Measured 2026-09-23: the API's WAF
 # answers 403 for two of its six shipped questions -- `exfiltration` cites

@@ -1,0 +1,31 @@
+{
+  "name": "jev-engineering",
+  "repo": "https://github.com/eugeniughelbur/jev-engineering",
+  "version": "git 3161dbfb44f21bafa2ec7940ec18cfb090c7b43d (MIT; jev_gate.py vendored, sha256 in vendor/SOURCES.sha256)",
+  "verified": true,
+  "verified_notes": "Verified against the vendored script on 2026-09-23, replacing a spec that had guessed this one from the README and marked itself unverified. `jev_gate.py` is self-contained (275 lines, no dependencies), reads the PreToolUse event on stdin, and backs onto OpenRouter (`typesafe/jev-1.13`), reading OPENROUTER_API_KEY or TYPESAFE_API_KEY. A live --explain returned source `model` with p and confidence, so the path is real. TWO traps. (1) It ships in `observe` mode, which decides and logs and blocks NOTHING; the row would be an allow-everything sheet at its default. JEV_GATE_MODE=enforce is set so the decision it reaches is the decision that is scored, and the arm's notes say observe is what a user gets. (2) On the hook path allow and ask are the SAME exit code, and in enforce mode deny and ask are BOTH exit 2 -- the exit code cannot carry the answer. Its own decision log can, so that is what is read. Its failure mode is `source: fallback` with verdict `ask` ('no API key set' / 'model unreachable'), which would otherwise score as a real hedge, so fallback is an error here and the case goes unanswered.",
+  "argv": [
+    "python3",
+    "{root}/vendor/jev_gate.py"
+  ],
+  "stdin": "hook_payload",
+  "verdict_from": "json_log_tail",
+  "log_path": "{workdir}/decisions.jsonl",
+  "decision_field": "verdict",
+  "error_when": [
+    "source",
+    [
+      "fallback"
+    ]
+  ],
+  "verdict_map": {
+    "allow": "allow",
+    "ask": "ask",
+    "deny": "deny"
+  },
+  "env": {
+    "JEV_GATE_MODE": "enforce",
+    "JEV_GATE_LOG": "{workdir}/decisions.jsonl"
+  },
+  "timeout": 90
+}
