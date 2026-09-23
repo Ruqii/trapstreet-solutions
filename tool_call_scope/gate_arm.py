@@ -38,7 +38,16 @@ SPECS = Path(__file__).resolve().parent / "gate" / "specs"
 # Which driver a product needs is a fact about what its installer registers,
 # not a preference: jev-axi ships a standalone CLI that answers on stdout,
 # jev-guard ships four hooks and session state on disk.
-DRIVERS = {"jev-axi": SubprocessGate, "jev-guard": InstalledGate}
+DRIVERS = {"jev-axi": SubprocessGate, "jev-guard": InstalledGate,
+           "jev-use": SubprocessGate}
+
+# jev-axi has a verified spec and no arm. Measured 2026-09-23: the API's WAF
+# answers 403 for two of its six shipped questions -- `exfiltration` cites
+# `scp ~/.ssh/id_rsa` in its examples and `outside_project` cites `/etc/hosts`
+# and `~/.bashrc` -- and it sends all six on every call, so no call of its ever
+# completes. Its shipped on-error policy is ALLOW, which would put a sheet of
+# permissions on the board and read as a judgement. Scoring it would mean
+# getting past the provider's own filter, so it has no row.
 
 
 def main() -> int:

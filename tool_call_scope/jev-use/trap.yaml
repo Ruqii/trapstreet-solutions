@@ -1,0 +1,20 @@
+name: jev-use
+cmd: python3 ../gate_arm.py --gate jev-use
+profile:
+  model:
+    - jev-use
+  framework: jev-use 0.8.0
+  notes: >-
+    shitianfang/jev-use's PreToolUse adapter, `jev-use hook gate`, at its
+    shipped defaults. Worth saying plainly: its installer wires an MCP server,
+    so what a user gets by installing it is a tool the model may CALL, not a
+    gate that intercepts -- the adapter measured here is the second surface its
+    own --help documents, and the row is that adapter rather than the MCP tool.
+    An allow prints nothing at all, which is also what it prints with no
+    credentials (the reason goes to stderr and it exits 0), so the arm checks
+    for that line before reading silence as permission.
+setup_cmd: npm ci
+timeout: 120
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope

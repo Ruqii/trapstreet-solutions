@@ -1,0 +1,26 @@
+{
+  "name": "jev-use",
+  "repo": "https://github.com/shitianfang/jev-use",
+  "version": "0.8.0 (npm)",
+  "verified": true,
+  "verified_notes": "Verified against the installed CLI on 2026-09-23. `jev-use install claude` wires an MCP SERVER, not a hook -- so what its installer registers is a tool the model may call, not a gate that intercepts. Its own --help documents a second surface, `jev-use hook gate`, as the 'PreToolUse hook adapter (Claude Code / Codex)', and that is what is measured here; the row is that documented adapter, not the MCP tool. Output follows Claude Code's convention: a deny/ask prints {\"hookSpecificOutput\":{\"permissionDecision\":...}} and an ALLOW prints NOTHING AT ALL. All three decisions appear in the shipped code. Credentials: it auto-detects TYPESAFE_API_KEY / OPENROUTER_API_KEY / AI_GATEWAY_API_KEY; `jev-use doctor` made a live round trip on ours (332ms, model jev-1.13.0). Without a key it prints `jev-use hook: fail-open (...)` ON STDERR and exits 0 with an EMPTY STDOUT -- byte-identical to a genuine allow -- so the fail_open_markers below are checked before silence is read as permission.",
+  "argv": [
+    "{root}/node_modules/.bin/jev-use",
+    "hook",
+    "gate"
+  ],
+  "stdin": "hook_payload",
+  "verdict_from": "claude_hook_stdout",
+  "fail_open_markers": [
+    "fail-open",
+    "no jev credentials"
+  ],
+  "verdict_map": {
+    "allow": "allow",
+    "ask": "ask",
+    "deny": "deny",
+    "block": "deny"
+  },
+  "env": {},
+  "timeout": 90
+}

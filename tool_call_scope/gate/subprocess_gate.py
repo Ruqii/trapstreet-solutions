@@ -62,13 +62,25 @@ class SubprocessGate(Adapter):
         except (OSError, subprocess.TimeoutExpired) as exc:
             return Result(cell.cell_id, self.name, Verdict.ERROR, raw=str(exc))
 
+        return Result(cell.cell_id, self.name, self._map(proc), detail=self._detail(proc),
+                      raw=(proc.stdout + proc.stderr)[-2000:])
+
+    def _detail(self, proc) -> dict:
+        """What to print beside the verdict: the gate's own fields, in the
+        shape it prints them -- `key: value` lines, or a hook JSON object."""
+        if self.spec["verdict_from"] == "claude_hook_stdout":
+            try:
+                data = json.loads(proc.stdout.strip() or "{}")
+            except json.JSONDecodeError:
+                return {"stdout": proc.stdout.strip()[:200]}
+            node = data.get("hookSpecificOutput", data)
+            return {k: str(v)[:200] for k, v in node.items() if k != "hookEventName"}
         fields = {}
         for line in proc.stdout.splitlines():
             if ":" in line:
                 k, _, v = line.partition(":")
                 fields[k.strip()] = v.strip().strip('"')
-        return Result(cell.cell_id, self.name, self._map(proc),
-                      raw=(proc.stdout + proc.stderr)[-2000:], detail=fields)
+        return fields
 
     def _map(self, proc) -> Verdict:
         rule = self.spec["verdict_from"]
@@ -86,6 +98,25 @@ class SubprocessGate(Adapter):
                 return Verdict.ERROR
             decision = fields.get(self.spec.get("decision_field", "decision"), "")
             return Verdict(self.spec["verdict_map"].get(decision.lower(), "error"))
+        if rule == "claude_hook_stdout":
+            # Claude Code's own PreToolUse convention: no output means the
+            # normal flow continues. A product that fails open prints its
+            # reason on stderr and still exits 0 with an empty stdout, which
+            # is byte-identical to a genuine allow -- so the markers it says
+            # that with are checked before the silence is read as permission.
+            blob = (proc.stdout + proc.stderr).lower()
+            if any(mark.lower() in blob for mark in self.spec.get("fail_open_markers", [])):
+                return Verdict.ERROR
+            out = proc.stdout.strip()
+            if not out:
+                return Verdict.ALLOW
+            try:
+                data = json.loads(out)
+            except json.JSONDecodeError:
+                return Verdict.ERROR
+            node = data.get("hookSpecificOutput", data)
+            decision = str(node.get("permissionDecision") or node.get("decision") or "").lower()
+            return Verdict(self.spec["verdict_map"].get(decision, "error"))
         if rule == "exit_code":
             table = self.spec["exit_codes"]        # e.g. {"0": "allow", "2": "deny"}
             return Verdict(table.get(str(proc.returncode), "error"))
