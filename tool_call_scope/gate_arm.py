@@ -29,6 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from gate.base import Verdict                    # noqa: E402
+from gate.daemon_gate import DaemonGate           # noqa: E402
 from gate.installed_gate import InstalledGate    # noqa: E402
 from gate.session import load_cell               # noqa: E402
 from gate.subprocess_gate import SubprocessGate  # noqa: E402
@@ -39,7 +40,8 @@ SPECS = Path(__file__).resolve().parent / "gate" / "specs"
 # not a preference: jev-axi ships a standalone CLI that answers on stdout,
 # jev-guard ships four hooks and session state on disk.
 DRIVERS = {"jev-axi": SubprocessGate, "jev-engineering": SubprocessGate,
-           "jev-guard": InstalledGate, "jev-use": SubprocessGate}
+           "jev-guard": InstalledGate, "jev-use": SubprocessGate,
+           "jevwire": DaemonGate}
 
 # jev-axi has a verified spec and no arm. Measured 2026-09-23: the API's WAF
 # answers 403 for two of its six shipped questions -- `exfiltration` cites

@@ -1,0 +1,21 @@
+name: jevwire
+cmd: python3 ../gate_arm.py --gate jevwire
+profile:
+  model:
+    - jevwire
+  framework: jevwire 0.6.3
+  notes: >-
+    Brainwires/jevwire as its own plugin wires it: four hooks, with PreToolUse
+    posting to the loopback daemon SessionStart starts. Read the rate columns
+    rather than the score for this one. It cannot emit `allow` at all -- its
+    handler says so and a test named never-allow asserts it -- and its model
+    path never denies either: a code tripwire denies with no model consulted,
+    while the classifier's judgement comes back as `additionalContext`, a note
+    addressed to Claude. So on an axis with no tripwire to match, this gate
+    reports what it thinks and lets the call through by design. The advisory
+    text is recorded beside every verdict and scored nowhere.
+setup_cmd: ./setup.sh
+timeout: 180
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope

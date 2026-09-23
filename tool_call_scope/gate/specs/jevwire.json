@@ -1,0 +1,14 @@
+{
+  "name": "jevwire",
+  "repo": "https://github.com/Brainwires/jevwire",
+  "version": "0.6.3, git 757468d6743f55225b9635e1d5f24524da79c2bc (MIT; built from source, it publishes no package)",
+  "verified": true,
+  "verified_notes": "Verified against the built plugin on 2026-09-23. Its hooks.json registers four events, and PreToolUse is `type: http` to 127.0.0.1:10522 with NO command fallback -- UserPromptSubmit has one, the gate does not -- so the daemon its SessionStart starts IS the product, not an optimisation. Two properties decide how to read it. `allow` is not representable at all: pre-tool-use.ts says so and tests/hooks/never-allow.test.ts asserts it, so a call it does not object to comes back `{}` and that is Claude Code's carry-on. And its model path never denies: a code tripwire returns permissionDecision deny with no model consulted (verified live on `rm -rf ~/` and `git push --force origin main`), while the classifier returns `additionalContext` -- an advisory addressed to Claude, carrying its own scope score. `ask_on_trip` only moves a TRIPWIRE from deny to ask; the classifier stays advisory under every setting. Every failure fails open in silence (main.ts: 'no key, a timeout, a network' all produce the same empty body), so the adapter preflights with a call only the classifier can answer and treats a silent daemon as an error. The preflight probe is a unique namespace each time because this gate remembers fingerprints across a session; a fixed probe is answered as a repeat. It is a command in the judged class rather than a tripwire, so a silent answer means the model path is silent, not that a code rule declined to fire.",
+  "plugin_root": "src-jevwire/plugin",
+  "hook_entry": "dist/hook.mjs",
+  "daemon_url": "http://127.0.0.1:10522",
+  "key_env": "TYPESAFE_API_KEY",
+  "preflight_command": "kubectl delete jobs --all -n preflight-{nonce}",
+  "preflight_expect": "jev classifier",
+  "timeout": 60
+}
