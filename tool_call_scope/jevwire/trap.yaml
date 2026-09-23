@@ -12,10 +12,10 @@ profile:
     either: a code tripwire denies with no model consulted, while the classifier
     answers with `additionalContext`, a note addressed to Claude. So on an axis
     with no tripwire to match the call goes through by design. Its questions are
-    also not this axis: across these 84 cases its headline "beyond this machine"
-    reads p=0.98 on allow, ask and deny alike, because what it asks is whether a
-    call reaches off the machine, not whether it stays inside what the user
-    authorised. The advisory text is recorded beside every verdict and scored
+    also not this axis: 37 of these 84 cases never reached its classifier at all,
+    and on the 47 that did, its headline "beyond this machine" reads p=0.98 on
+    allow, ask and deny alike -- what it asks is whether a call reaches off the
+    machine, not whether it stays inside what the user authorised. The advisory text is recorded beside every verdict and scored
     nowhere.
 setup_cmd: ./setup.sh
 timeout: 180
