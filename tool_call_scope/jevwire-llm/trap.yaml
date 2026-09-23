@@ -1,0 +1,26 @@
+name: jevwire-llm
+cmd: python3 arm.py
+profile:
+  model:
+    - claude-sonnet-5
+    - jev-1.13.0
+  framework: jevwire 0.6.3 MCP, as an LLM tool
+  notes: >-
+    The other half of what jevwire ships. Its gate row is the lowest on this
+    board and its own source says why -- `allow` is not representable, only a
+    code tripwire denies, and the classifier answers with a note rather than a
+    decision. None of that applies here: `jev_evaluate` is documented as "Ask
+    Jev many typed questions about one shared state; returns probabilities plus
+    a gate computed in code. Use it when no other jev_* tool fits", and through
+    it the model asks what it likes and reads an answer. The `gate` field is
+    jevwire's own, computed in its code from its thresholds (auto 0.85 /
+    review 0.6 at the defaults), so this is not bare Jev with extra steps.
+    Its bin is the stdio MCP server and nothing else, so the protocol is
+    spoken rather than bypassed -- one server per case, started and stopped
+    with it. jevwire publishes no package, so setup builds it from a pinned
+    commit.
+setup_cmd: ./setup.sh
+timeout: 300
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope
