@@ -1,0 +1,26 @@
+name: jev-use-mcp
+cmd: python3 arm.py
+profile:
+  model:
+    - claude-sonnet-5
+    - jev-1.13.0
+  framework: jev-use 0.8.0 as an LLM tool
+  notes: >-
+    jev-use the way its installer wires it. `jev-use install claude` wires an
+    MCP server, and the product's own tagline is "the typed handoff between
+    your LLM and Jev": the model decides what is worth asking, asks it, and
+    reads the probabilities back. Every other row on this board is Jev with no
+    LLM in it; this one is the combination the product actually ships. The
+    handoff is the product's, not ours -- `judge` returns escalate: true when a
+    question is open-ended or under the confidence threshold, which is jev-use
+    handing the question back rather than guessing, and the model answers those
+    itself. What to ask, and what to do with an escalation, are the model's.
+    Each case records every verdict Jev returned beside the model's final
+    answer, so how often the model asked, how often Jev handed back, and how
+    often the model took Jev's answer are all recoverable -- none of them is
+    visible in a score.
+setup_cmd: npm ci
+timeout: 300
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope
