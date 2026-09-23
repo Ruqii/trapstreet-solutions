@@ -1,0 +1,21 @@
+name: llm-haiku
+cmd: python3 arm.py
+profile:
+  model:
+    - claude-haiku-4-5
+  framework: direct prompt, no wrapper
+  notes: >-
+    The thing these products exist to replace: a general model asked the same
+    question in prose. It gets exactly what the bare-Jev row gets -- the
+    session and the pending call -- with the task's own statement as the system
+    prompt, and answers in one word. Nothing is tuned: no examples, no
+    chain-of-thought instruction, no rubric of ours, because a prompt
+    engineered against these 84 cases would measure the prompt rather than the
+    model. max_tokens is 2048 only because 256 truncated a case mid-reasoning,
+    which is an instrument artefact and not an answer it failed to give. Read
+    it beside jev-direct: same input, same judge, one asked in prose and one
+    asked as two typed questions.
+timeout: 120
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope
