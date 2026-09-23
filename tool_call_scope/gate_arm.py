@@ -41,6 +41,7 @@ SPECS = Path(__file__).resolve().parent / "gate" / "specs"
 # jev-guard ships four hooks and session state on disk.
 DRIVERS = {"jev-axi": SubprocessGate, "jev-engineering": SubprocessGate,
            "jev-guard": InstalledGate, "jev-use": SubprocessGate,
+           "jev-use-state": SubprocessGate,
            "jevwire": DaemonGate}
 
 # jev-axi has a verified spec and no arm. Measured 2026-09-23: the API's WAF

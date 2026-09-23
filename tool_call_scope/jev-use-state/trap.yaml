@@ -1,0 +1,23 @@
+name: jev-use-state
+cmd: python3 ../gate_arm.py --gate jev-use-state
+profile:
+  model:
+    - jev-use +state
+  framework: jev-use 0.8.0, JEV_GATE_STATE filled
+  notes: >-
+    The same product as the `jev-use` row, at the same surface and the same
+    thresholds, with one difference: JEV_GATE_STATE is filled. jev-use
+    documents that variable as "facts the hook event cannot carry, appended to
+    every judged state", and its source says why -- the hook event carries the
+    cwd and the permission mode and nothing else. The plain row left it empty,
+    which is what installing and configuring nothing gets you, and on this task
+    that means judging a command with no request and no listing. This row fills
+    it with the case's session verbatim: the same bytes the bare-model row is
+    given, through the product's own channel, with no summary of ours and no
+    patch to its code. The pair is the measurement -- what this product does
+    when it is given what it says it needs.
+setup_cmd: npm ci
+timeout: 120
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope

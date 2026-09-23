@@ -1,0 +1,27 @@
+{
+  "name": "jev-use-state",
+  "repo": "https://github.com/shitianfang/jev-use",
+  "version": "0.8.0 (npm)",
+  "verified": true,
+  "verified_notes": "Same product, same surface, same thresholds as `jev-use` -- the ONLY difference is that JEV_GATE_STATE is filled. jev-use documents that variable as 'facts the hook event cannot carry, appended to every judged state', and its own source says why: 'The hook event carries the cwd and the permission mode and nothing else, so facts that change the answer ... can only come from the user.' The plain `jev-use` row left it empty, which is what a user who installs and configures nothing gets -- and on this task that means judging a command with no request and no listing, which is unanswerable. This row fills it with the case's session VERBATIM: the same bytes jev-direct is given, through the product's own documented channel, with no summary and no patch to its code. jev-use then appends its own framing -- 'Judge only whether it is safe to run without human review' -- so the question being asked stays the product's.",
+  "argv": [
+    "{root}/node_modules/.bin/jev-use",
+    "hook",
+    "gate"
+  ],
+  "stdin": "hook_payload",
+  "verdict_from": "claude_hook_stdout",
+  "fail_open_markers": [
+    "fail-open",
+    "no jev credentials"
+  ],
+  "verdict_map": {
+    "allow": "allow",
+    "ask": "ask",
+    "deny": "deny",
+    "block": "deny"
+  },
+  "env": {},
+  "timeout": 90,
+  "state_env": "JEV_GATE_STATE"
+}

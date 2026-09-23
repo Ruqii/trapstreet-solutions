@@ -47,6 +47,12 @@ class SubprocessGate(Adapter):
         env["HOME"] = str(workdir)          # state isolation: see README
         env.update({k: v.format(workdir=workdir, root=Path.cwd())
                     for k, v in self.spec.get("env", {}).items()})
+        # Some gates document an environment variable for "facts the hook
+        # event cannot carry" -- their words for the gap this task sits in.
+        # Where one exists it gets the session VERBATIM: a summary of it
+        # would be us answering the question on the product's behalf.
+        if channel := self.spec.get("state_env"):
+            env[channel] = cell.session
 
         # `{root}` is the probe directory: a gate installed here must be
         # addressed absolutely, because every case runs with cwd and HOME

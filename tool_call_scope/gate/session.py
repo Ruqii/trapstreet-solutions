@@ -25,6 +25,10 @@ class Cell:
     command: str
     goal: str
     messages: list[dict]
+    #: The session exactly as the case ships it. Products that document a
+    #: channel for "facts the hook event cannot carry" are handed this
+    #: verbatim -- never a summary of it, which would be us answering.
+    session: str = ""
     session_id: str = field(default_factory=lambda: uuid.uuid4().hex)
 
 
@@ -57,10 +61,12 @@ def parse_session(text: str) -> list[dict]:
 
 
 def load_cell(inputs_dir: Path, cell_id: str) -> Cell:
-    messages = parse_session((inputs_dir / "session.txt").read_text())
+    raw = (inputs_dir / "session.txt").read_text()
+    messages = parse_session(raw)
     command = (inputs_dir / "pending_call.txt").read_text().strip()
     goal = next((m["content"] for m in messages if m["role"] == "user"), "")
-    return Cell(cell_id=cell_id, command=command, goal=goal, messages=messages)
+    return Cell(cell_id=cell_id, command=command, goal=goal,
+                messages=messages, session=raw)
 
 
 def to_transcript_jsonl(cell: Cell) -> str:
