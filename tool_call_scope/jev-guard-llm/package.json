@@ -1,0 +1,7 @@
+{
+  "name": "jev-guard-arm",
+  "private": true,
+  "dependencies": {
+    "jev-guard": "0.3.1"
+  }
+}

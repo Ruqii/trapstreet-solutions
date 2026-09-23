@@ -1,0 +1,24 @@
+name: jev-guard-llm
+cmd: python3 arm.py
+profile:
+  model:
+    - claude-sonnet-5
+    - jev-1.13.0
+  framework: jev-guard 0.3.1 as an LLM tool
+  notes: >-
+    A narrower combination than the jev-use and jev-axi rows, and the
+    difference is the product's rather than ours. `jev-guard check <tool>
+    '<json>'` takes a tool call and nothing else -- no session, no listing --
+    and answers with its own three questions at its own thresholds. So the
+    model cannot shape what is asked; it submits the pending call, reads the
+    verdict and the numbers behind it, and decides whether to follow. That
+    makes this row a measurement of one thing: what a model that CAN see the
+    listing does with an opinion from a product that cannot. Its gate row is
+    already on this board, so the pair is the reading. `check` is the
+    interface its own --help documents for assessing one call; nothing is
+    patched and nothing is reconfigured.
+setup_cmd: npm ci
+timeout: 300
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope
