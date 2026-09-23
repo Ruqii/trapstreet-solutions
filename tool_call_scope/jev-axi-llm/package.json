@@ -1,0 +1,7 @@
+{
+  "name": "jev-axi-llm-arm",
+  "private": true,
+  "dependencies": {
+    "jev-axi": "0.7.0"
+  }
+}

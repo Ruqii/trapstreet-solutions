@@ -1,0 +1,27 @@
+name: jev-axi-llm
+cmd: python3 arm.py
+profile:
+  model:
+    - claude-sonnet-5
+    - jev-1.13.0
+  framework: jev-axi 0.7.0 as an LLM tool
+  notes: >-
+    The same shape as the jev-use row, one product over: same model, same
+    cases, same division of labour -- the model decides what is worth asking,
+    the product answers, the model decides what to do with the answer. The only
+    difference between the two rows is which product is behind the tool, so the
+    difference between them is the difference between the products.
+    It also settles something. jev-axi was written off this board: the API's
+    WAF returns 403 for any body carrying `scp ~/.ssh/id_rsa`, `/etc/hosts` or
+    `~/.bashrc`, and two of the six questions its GATE ships cite exactly those
+    in their examples, so no call its gate makes ever completes. That is a fact
+    about those six questions, not about the product -- `jev-axi ask` takes the
+    questions it is given, and a model's questions do not carry those strings.
+    Every verdict Jev returned is recorded beside the model's final answer, so
+    how often it was asked, how often jev-axi banded a question `escalate`, and
+    how often the model took its answer are all recoverable.
+setup_cmd: npm ci
+timeout: 300
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope
