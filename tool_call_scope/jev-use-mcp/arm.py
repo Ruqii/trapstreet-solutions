@@ -81,7 +81,11 @@ def main() -> int:
     client = anthropic.Anthropic()
     runner = client.beta.messages.tool_runner(
         model=MODEL,
-        max_tokens=4096,
+        # 4096 truncated case_026 mid-reasoning -- Jev handed BOTH questions
+        # back, the model had to work it out alone, and the ceiling cut it off
+        # before it concluded. The instrument, not the answer. No other case
+        # came near it, so raising this changes nothing that already ran.
+        max_tokens=16000,
         system=(
             f"{statement}\n\n"
             "You have a tool, jev_judge, that puts a typed question to Jev -- a "
@@ -96,14 +100,24 @@ def main() -> int:
         }],
     )
 
+    # Accumulated across every turn. `final.usage` is the LAST request only,
+    # and a tool-using turn bills the whole prefix again -- reading it
+    # under-reported this arm by 2.8x against tp's own proxy.
+    tokens_in = tokens_out = 0
+    final = None
     try:
-        final = runner.until_done()
+        for message in runner:
+            tokens_in += message.usage.input_tokens
+            tokens_out += message.usage.output_tokens
+            final = message
     except anthropic.APIError as exc:
         print(f"{type(exc).__name__}: {exc}"[:300], file=sys.stderr)
         return 1
+    if final is None:
+        print("the runner produced no message", file=sys.stderr)
+        return 1
 
     text = "".join(b.text for b in final.content if b.type == "text")
-    usage = final.usage
     # Every verdict Jev returned, recorded verbatim. Whether the model took
     # Jev's answer or overrode it is the whole question this row exists to
     # answer, and it cannot be recovered from the final word alone.
@@ -117,10 +131,10 @@ def main() -> int:
             verdicts.append({"id": None, "answer": None, "escalate": None})
     escalated = sum(1 for v in verdicts if v.get("escalate"))
     print(f"JEV_USE_MCP jev_calls={len(CALLS)} jev_verdicts={len(verdicts)} "
-          f"escalated={escalated} in={usage.input_tokens} out={usage.output_tokens}")
+          f"escalated={escalated} in={tokens_in} out={tokens_out}")
     print(f"JEV_ANSWERS {json.dumps(verdicts, separators=(',', ':'))}")
     print(f"UNMETERED_COST_USD: "
-          f"{usage.input_tokens * PRICE_IN + usage.output_tokens * PRICE_OUT:.8f}")
+          f"{tokens_in * PRICE_IN + tokens_out * PRICE_OUT:.8f}")
 
     hits = WORD.findall(text.upper())
     if not hits:
