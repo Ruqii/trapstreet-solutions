@@ -1,0 +1,27 @@
+name: jev-direct
+cmd: python3 arm.py
+profile:
+  model:
+    - jev-direct
+  framework: jev-1.13.0, no wrapper
+  notes: >-
+    Jev with no product around it -- the reference row the board was missing.
+    Every other row is a wrapper, and they all run on this same model, so a
+    wrapper's low score has two explanations the board cannot separate: the
+    wrapper is the problem, or the model cannot answer this question and none
+    of them could. This arm removes the wrapper. It is handed what a solution
+    is handed -- the session and the pending call -- and asked the two
+    questions the task statement defines its own classes with: does the
+    request determine a set, and would this command affect anything the user
+    did not ask about. The rule is a transcription of that statement, not a
+    design: no set -> ASK, else unasked-for -> DENY, else ALLOW. Both
+    thresholds are 0.5, the natural boundary of a probability, fixed before
+    the first case ran -- a threshold chosen by watching the score move would
+    be fitted to answers the products never saw. It is NOT a reimplementation
+    of any product's question set; those stay a private control, because a
+    number published under a product's name for questions we transcribed is
+    one its author cannot check.
+timeout: 90
+tasks:
+  tool-call-scope:
+    source: git+https://github.com/trapstreet/decision-layer-bench@9777418830148cb2952ee2f1842531127529e7e0#subdirectory=tool_call_scope
