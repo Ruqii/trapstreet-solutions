@@ -40,6 +40,12 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from jevkey import ensure_keys                                  # noqa: E402
+
+ensure_keys()   # the shell may not have brought the key; see jevkey.py
+
+
 ENDPOINT = "https://api.typesafe.ai/v1/systemone"
 MODEL = "jev-latest"
 PRICE_PER_INPUT_TOKEN = 0.042 / 1e6

@@ -32,6 +32,12 @@ from anthropic import beta_tool
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mcp import McpStdio                                        # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from jevkey import ensure_keys                                  # noqa: E402
+
+ensure_keys()   # the shell may not have brought the key; see jevkey.py
+
+
 MODEL = "claude-sonnet-5"
 WORD = re.compile(r"\b(ALLOW|ASK|DENY)\b")
 PRICE_IN, PRICE_OUT = 2.00 / 1e6, 10.00 / 1e6
